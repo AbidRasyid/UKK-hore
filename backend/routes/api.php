@@ -15,3 +15,17 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->gr
     Route::put('/user/{id}', [UserController::class, 'UpdateUser']);
     Route::put('/user/{id}/block', [UserController::class, 'BlockUser']);
 });
+
+Route::middleware(['auth:sanctum', 'role:'. UserRole::SUPERVISOR->value])->group(function(){
+    Route::get('/users', [UserController::class, 'GetAll']);
+    Route::get('/user/{id}', [UserController::class, 'ShowUser']);
+});
+
+Route::middleware(['auth:sanctum', 'role:'. UserRole::TELLER->value])->group(function(){
+    Route::get('/users', [UserController::class, 'GetAll']);
+    Route::get('/user/{id}', [UserController::class, 'ShowUser']);
+});
+
+Route::middleware(['auth:sanctum', 'role:'. UserRole::CUSTOMER->value])->group(function(){
+    Route::get('/user/{id}', [UserController::class, 'ShowUser']);
+});
