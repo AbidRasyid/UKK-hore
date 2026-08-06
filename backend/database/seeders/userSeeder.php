@@ -36,6 +36,8 @@ class userSeeder extends Seeder
             'role' => UserRole::TELLER->value
         ]);
 
+        
+
         $customer = User::create([
             'username' => 'customer',
             'password' => 'secret123',
