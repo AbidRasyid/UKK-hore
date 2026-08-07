@@ -5,13 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UserRequest;
 use App\Models\User;
 use App\Status;
-use App\UserRole;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
-    public function GetAll():JsonResponse{
+    public function index():JsonResponse{
         try{
             $users = User::all();
             return response()->json([
@@ -25,7 +24,7 @@ class UserController extends Controller
         }
     }
 
-    public function CreateUser(UserRequest $request): JsonResponse
+    public function store(UserRequest $request): JsonResponse
     {
         $validated = $request->validated();
         try {
@@ -46,7 +45,7 @@ class UserController extends Controller
         }
     }
 
-    public function ShowUser(int $id): JsonResponse {
+    public function show(int $id): JsonResponse {
         try {
             $user = User::findOrFail($id);
             return response()->json([
@@ -60,7 +59,7 @@ class UserController extends Controller
         }
     }
 
-    public function UpdateUser(UserRequest $request, int $id):JsonResponse
+    public function update(UserRequest $request, int $id):JsonResponse
     {
         $validated = $request->validated();
         try {
@@ -82,7 +81,7 @@ class UserController extends Controller
         }
     }
 
-    public function BlockUser(int $id):JsonResponse
+    public function block(int $id):JsonResponse
     {
         try {
             $user = User::findOrFail($id);
