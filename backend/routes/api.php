@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\UserController;
 use App\UserRole;
 // use Illuminate\Http\Request;
@@ -14,6 +15,9 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->gr
     Route::get('/user/{id}', [UserController::class, 'show']);
     Route::put('/user/{id}', [UserController::class, 'update']);
     Route::put('/user/{id}/block', [UserController::class, 'block']);
+
+    route::get('/customers', [CustomerController::class, 'index']);
+    Route::post('/customers', [CustomerController::class, 'store']);
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::SUPERVISOR->value])->group(function(){
