@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\UserRole;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\User;
+use Carbon\Carbon;
 
 class CustomerController extends Controller
 {
@@ -22,4 +25,52 @@ class CustomerController extends Controller
             ], 500);
         }
     }
+
+    public function store(Request $request):JsonResponse{
+        try{
+            $validated = $request->validate([
+                "username" => ['required', 'string'],
+                "password" => ['required', 'string'],
+                "student_name" => ['required', 'string'],
+                "student_id" => ['required', 'string'],
+                "student_class" => ['required', 'string'],
+                "pin" => ['required', 'string']
+            ]);
+
+            $now = Carbon::now();
+
+            $academic_year = $now->month >= 7 ? $now->year : $now->year - 1;
+
+            return DB::transaction(function () use ($validated, $academic_year){
+                $user = User::create([
+                    'username' => $validated['username'],
+                    'password' => $validated['password'],
+                    'fullname' => $validated['student_name'],
+                    'role' => UserRole::CUSTOMER->value,
+                ]);
+
+                $customer = Customer::create([
+                    'user_id' => $user->id,
+                    'student_id' => $validated['student_id'],
+                    'account_number' => $academic_year . $validated['student_id'],
+                    'student_name' => $validated['student_name'],
+                    'student_class' => $validated['student_class'],
+                    'pin' => $validated['pin'],
+                ]);
+
+                return response()->json([
+                    "message" => "user created successfully",
+                    "data" => [
+                        "user" => $user, 
+                        "customer" => $customer
+                    ] 
+                ], 200);
+            });
+        }catch(\Throwable $e){
+            return response()->json([
+                "message" => "user failed to create". $e->getMessage()
+            ], 400);
+        }
+    }
+
 }
