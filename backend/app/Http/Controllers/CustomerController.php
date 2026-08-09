@@ -73,4 +73,19 @@ class CustomerController extends Controller
         }
     }
 
+    public function show(int $id):JsonResponse
+    {
+        try {
+            $customer = Customer::findOrFail($id);
+            return response()->json([
+                "message" => "customer has been found successfully",
+                "data" => $customer
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                "message" => "customer not found",
+            ], 404);
+        }
+    }
+
 }
