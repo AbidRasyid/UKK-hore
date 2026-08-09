@@ -77,14 +77,55 @@ class CustomerController extends Controller
     {
         try {
             $customer = Customer::findOrFail($id);
+            $user = User::findOrFail($customer['user_id']);
             return response()->json([
                 "message" => "customer has been found successfully",
-                "data" => $customer
+                "data" => [
+                    "customer" => $customer,
+                    "user" => $user
+                    ]
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([
                 "message" => "customer not found",
             ], 404);
+        }
+    }
+
+    public function update(Request $request, int $id):JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                "username" => ['required', 'string'],
+                "password" => ['required', 'string'],
+                "student_name" => ['required', 'string'],
+                "student_id" => ['required', 'string'],
+                "student_class" => ['required', 'string'],
+                "pin" => ['required', 'string']
+            ]);
+            $customer = Customer::findOrFail($id);
+            $user = User::findOrFail($customer['user_id']);
+
+            return DB::transaction(function () use ($validated, $user, $customer){
+                $user->update([
+                    'username' => $validated['username'],
+                    'password' => $validated['password'],
+                    'fullname' => $validated['student_name'],
+                ]);
+                $customer->update([
+                    'student_name' => $validated['student_name'],
+                    'student_class' => $validated['student_class'],
+                    'pin' => $validated['pin'],
+                ]);
+                return response()->json([
+                    "message" => "user updated successfully"
+                ], 200);
+            });
+
+        } catch (\Throwable $th) {
+            return response()->json([
+                "message" => "user failed to update",
+            ], 400);
         }
     }
 
