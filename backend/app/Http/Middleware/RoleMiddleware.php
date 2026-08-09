@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\UserRole;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,10 +14,13 @@ class RoleMiddleware
      *
      * @param  Closure(Request): (Response)  $next
      */
-    public function handle(Request $request, Closure $next, string $role): Response
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        if(Auth::user()->role !== UserRole::from($role)){
-            abort(403);
+
+        $roles = array_map('trim', $roles);
+
+        if (!in_array(Auth::user()->role->value, $roles)) {
+            abort(403, "unauthorized: allowed roles are " . implode(', ', $roles) . ". Your role: " . Auth::user()->role->value);
         }
         return $next($request);
     }
