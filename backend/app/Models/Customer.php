@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Status;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 use App\Models\Transaction;
+use Laravel\Sanctum\HasApiTokens;
 
 class Customer extends Model
 {
-    use HasFactory;
+    use HasFactory, HasApiTokens;
 
     protected $fillable = [
         'user_id',
@@ -17,21 +19,23 @@ class Customer extends Model
         'student_id',
         'student_name',
         'student_class',
-        'pin'
+        'password',
+        'pin',
+        'status'
     ];
 
     protected $hidden = [
+        'password',
         'pin'
     ];
 
+    
     protected function casts(): array{
         return [
-            'pin' => 'hashed'
+            'password' => 'hashed',
+            'pin' => 'hashed',
+            'status' => Status::class,
         ];
-    }
-
-    public function user(){
-        return $this->belongsTo(User::class);
     }
 
     public function transaction(){
