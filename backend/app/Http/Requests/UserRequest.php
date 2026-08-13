@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Status;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -30,6 +31,7 @@ class UserRequest extends FormRequest
         'password' => ['required', 'string'],
         'fullname' => ['required', 'string'],
         'role' => ['required', Rule::enum(UserRole::class)],
+        'status' => ['nullable', Rule::enum(Status::class)]
     ];
     }
 }
