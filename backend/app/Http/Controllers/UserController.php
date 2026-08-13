@@ -4,9 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UserRequest;
 use App\Models\User;
-use App\Status;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -68,7 +66,8 @@ class UserController extends Controller
                 'username' => $validated['username'],
                 'password' => $validated['password'],
                 'fullname' => $validated['fullname'],
-                'role' => $validated['role']
+                'role' => $validated['role'],
+                'status' => $validated['status']
             ]);
             return response()->json([
                 "message" => "User updated successfully",
@@ -81,33 +80,33 @@ class UserController extends Controller
         }
     }
 
-    public function block(int $id):JsonResponse
-    {
-        try {
-            $user = User::findOrFail($id);
+    // public function block(int $id):JsonResponse
+    // {
+    //     try {
+    //         $user = User::findOrFail($id);
 
-            if($user->status === Status::DORMANT){
-                return response()->json([
-                    "message" => "User is already blocked.",
-                ], 400);
-            }
-            $user->update([
-                "status" => Status::DORMANT->value,
-            ]);
-            return response()->json([
-                "message" => "User has been successfully blocked.",
-                "data" => $user,
-            ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                "message" => "User not found"
-            ], 404);
-        } catch(\Throwable $e){
-            Log::error("BlockUser Error for ID $id: " . $e->getMessage());
+    //         if($user->status === Status::BLOCKED){
+    //             return response()->json([
+    //                 "message" => "User has blocked.",
+    //             ], 400);
+    //         }
+    //         $user->update([
+    //             "status" => Status::BLOCKED->value,
+    //         ]);
+    //         return response()->json([
+    //             "message" => "User has been successfully blocked.",
+    //             "data" => $user,
+    //         ], 200);
+    //     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+    //         return response()->json([
+    //             "message" => "User not found"
+    //         ], 404);
+    //     } catch(\Throwable $e){
+    //         Log::error("BlockUser Error for ID $id: " . $e->getMessage());
 
-            return response()->json([
-                "message" => "Internal Server Error"
-            ], 500);
-        }
-    }
+    //         return response()->json([
+    //             "message" => "Internal Server Error"
+    //         ], 500);
+    //     }
+    // }
 }
