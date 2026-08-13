@@ -8,6 +8,7 @@ use App\UserRole;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/customer/login', [AuthController::class, 'CustomerLogin']);
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value . ',' . UserRole::SUPERVISOR->value])->group(function(){
     Route::get('/users', [UserController::class, 'index']);
@@ -21,8 +22,7 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value . ','
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->group(function(){
     Route::post('/users', [UserController::class, 'store']);
-    Route::put('/user/{id}', [UserController::class, 'update']);
-    Route::put('/user/{id}/block', [UserController::class, 'block']);
+    Route::patch('/user/{id}', [UserController::class, 'update']);
 
     Route::post('/customers', [CustomerController::class, 'store']);
     Route::post('/customer/{id}/edit', [CustomerController::class, 'update']);
@@ -33,8 +33,4 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::SUPERVISOR->value])->group
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::TELLER->value])->group(function(){
-});
-
-Route::middleware(['auth:sanctum', 'role:'. UserRole::CUSTOMER->value])->group(function(){
-
 });
