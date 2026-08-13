@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Status;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -84,7 +85,8 @@ class CustomerController extends Controller
                 "student_id" => ['required', 'string'],
                 "student_class" => ['required', 'string'],
                 "password" => ['required', 'string'],
-                "pin" => ['required', 'string']
+                "pin" => ['required', 'string'],
+                "status" => ['nullable', Status::class]
             ]);
             $customer = Customer::findOrFail($id);
                 $customer->update([
