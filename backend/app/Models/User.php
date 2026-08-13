@@ -11,7 +11,6 @@ use App\UserRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\Customer;
 use App\Models\Transaction;
 use App\Status;
 use Laravel\Sanctum\HasApiTokens;
@@ -46,10 +45,6 @@ class User extends Authenticatable
         ];
     }
 
-    public function customer(){
-        return $this->hasOne(Customer::class);
-    }
-
     public function transaction(){
         return $this->hasMany(Transaction::class);
     }
@@ -60,7 +55,6 @@ class User extends Authenticatable
         UserRole::ADMINISTRATOR => 'admin',
         UserRole::SUPERVISOR => 'supervisor',
         UserRole::TELLER => 'teller',
-        UserRole::CUSTOMER => 'customer',
     };
 }
 }
