@@ -36,21 +36,12 @@ class userSeeder extends Seeder
             'role' => UserRole::TELLER->value
         ]);
 
-        
-
-        $customer = User::create([
-            'username' => 'customer',
-            'password' => 'secret123',
-            'fullname' => 'customer',
-            'role' => UserRole::TELLER->value
-        ]);
-
         Customer::create([
             'account_number' => '2617756',
-            'user_id' => $customer->id,
             'student_id' => '17756',
             'student_name' => 'customer',
             'student_class' => '12 RPL 1',
+            'password' => '234345',
             'pin' => '123456'
         ]);
     }
