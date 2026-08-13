@@ -75,7 +75,7 @@ class UserController extends Controller
             ], 200);
         }catch(\Throwable $e){
             return response()->json([
-                "message" => "User fail to update",
+                "message" => $e->getMessage(),
             ], 400);
         }
     }
