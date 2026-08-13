@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('username')->unique();
             $table->string('password');
             $table->string('fullname');
-            $table->enum('role', array_column(UserRole::cases(), 'value'))->default(UserRole::CUSTOMER->value);
-            $table->enum('status', array_column(Status::cases(), 'value'))->default(Status::ACTIVE->value);
+            $table->enum('role', array_column(UserRole::cases(), 'value'));
+            $table->enum('status', array_column(Status::cases(), 'value'));
             $table->timestamps();
         });
     }
