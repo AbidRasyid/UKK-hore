@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('accounting_journal', function (Blueprint $table) {
+        Schema::create('accounting_journals', function (Blueprint $table) {
                 $table->id();
 
     $table->foreignId('transaction_id')
