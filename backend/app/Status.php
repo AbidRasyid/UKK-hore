@@ -5,5 +5,6 @@ namespace App;
 enum Status: string
 {
     case ACTIVE = 'active';
-    case DORMANT = 'dormant';
+    case INACTIVE = 'inactive';
+    case BLOCKED = 'blocked';
 }
