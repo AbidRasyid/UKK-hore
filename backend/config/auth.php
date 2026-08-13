@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Customer;
 use App\Models\User;
 
 return [
@@ -42,6 +43,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'api_nasabah' => [
+            'driver' => 'sanctum',
+            'provider' => 'customers',
+        ]
     ],
 
     /*
@@ -66,6 +71,10 @@ return [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
         ],
+        'customers' => [
+            'driver' => 'eloquent',
+            'model' => env('AUTH_MODEL', Customer::class),
+        ]
 
         // 'users' => [
         //     'driver' => 'database',
