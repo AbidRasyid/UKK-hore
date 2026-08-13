@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use App\UserRole;
 // use Illuminate\Http\Request;
@@ -22,10 +23,10 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value . ','
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->group(function(){
     Route::post('/users', [UserController::class, 'store']);
-    Route::patch('/user/{id}', [UserController::class, 'update']);
+    Route::patch('/user/{id}/edit', [UserController::class, 'update']);
 
     Route::post('/customers', [CustomerController::class, 'store']);
-    Route::post('/customer/{id}/edit', [CustomerController::class, 'update']);
+    Route::patch('/customer/{id}/edit', [CustomerController::class, 'update']);
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::SUPERVISOR->value])->group(function(){
@@ -33,4 +34,5 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::SUPERVISOR->value])->group
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::TELLER->value])->group(function(){
+    Route::post('/user/{customer_id}/transaction', [TransactionController::class, 'store']);
 });
