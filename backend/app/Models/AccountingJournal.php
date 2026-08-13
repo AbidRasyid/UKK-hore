@@ -12,7 +12,7 @@ class AccountingJournal extends Model
     protected $fillable = [
         'transaction_id',
         'account_code',
-        'positiion',
+        'position',
         'amount',
     ];
 
