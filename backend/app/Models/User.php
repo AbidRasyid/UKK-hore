@@ -49,6 +49,10 @@ class User extends Authenticatable
         return $this->hasMany(Transaction::class);
     }
 
+    public function daily_report(){
+        return $this->hasMany(DailyReport::class);
+    }
+
     public function dashboardRoute(): string
 {
     return match ($this->role) {
