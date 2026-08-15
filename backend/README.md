@@ -1,58 +1,302 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# UKK Hore Backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Backend API untuk aplikasi sistem tabungan siswa / perbankan sekolah berbasis Laravel. Aplikasi ini menangani autentikasi, manajemen user, data nasabah, transaksi setoran dan penarikan, serta pencatatan jurnal akuntansi.
 
-## About Laravel
+## Ringkasan Proyek
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Proyek ini dirancang untuk mendukung alur operasional berikut:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Login untuk admin/staf internal
+- Login khusus untuk customer siswa
+- Role-based access control berdasarkan peran:
+  - administrator
+  - supervisor
+  - teller
+- CRUD data user dan customer
+- Transaksi deposit dan withdrawal
+- Validasi saldo minimum saat penarikan
+- Pencatatan jurnal akuntansi otomatis untuk setiap transaksi
+- Integrasi dengan Laravel Sanctum untuk autentikasi token
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Teknologi yang Digunakan
 
-## Learning Laravel
+- PHP 8.3
+- Laravel 13
+- Laravel Sanctum
+- MySQL / SQLite / database yang didukung Laravel
+- Vite untuk asset frontend
+- Composer & npm
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Struktur Folder Utama
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+backend/
+├── app/
+│   ├── Http/Controllers/
+│   ├── Models/
+│   ├── Providers/
+│   ├── Status.php
+│   ├── UserRole.php
+│   └── ...
+├── config/
+├── database/
+│   ├── migrations/
+│   └── seeders/
+├── public/
+├── resources/
+├── routes/
+│   ├── api.php
+│   └── web.php
+├── tests/
+├── .env.example
+├── artisan
+├── composer.json
+├── package.json
+├── phpunit.xml
+├── README.md
+├── vite.config.js
+└── ...
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Persyaratan Sistem
 
-## Contributing
+Pastikan perangkat Anda sudah terinstall:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- PHP 8.3+
+- Composer
+- Node.js 18+
+- Database server (MySQL/PostgreSQL/SQLite)
+- Extension PHP yang dibutuhkan Laravel (PDO, OpenSSL, Mbstring, Tokenizer, XML, Ctype, JSON, BCMath)
 
-## Code of Conduct
+## Cara Menjalankan Proyek
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1. Masuk ke folder backend
 
-## Security Vulnerabilities
+```bash
+cd backend
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+2. Salin file environment
+
+```bash
+cp .env.example .env
+```
+
+3. Atur konfigurasi database di file `.env`
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=ukk_hore
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+4. Install dependency PHP dan Node
+
+```bash
+composer install
+npm install
+```
+
+5. Generate application key
+
+```bash
+php artisan key:generate
+```
+
+6. Jalankan migrasi database
+
+```bash
+php artisan migrate
+```
+
+7. Jalankan server aplikasi
+
+```bash
+php artisan serve
+```
+
+Atau jalankan mode development dengan frontend dan background process sekaligus:
+
+```bash
+composer run dev
+```
+
+## Endpoint Utama
+
+Semua endpoint API berada di prefix `/api`.
+
+### 1. Autentikasi
+
+#### Login admin/staf
+
+```http
+POST /api/login
+```
+
+Body:
+
+```json
+{
+  "username": "admin",
+  "password": "password123"
+}
+```
+
+#### Login customer/siswa
+
+```http
+POST /api/customer/login
+```
+
+Body:
+
+```json
+{
+  "student_id": "2024001",
+  "password": "secret123"
+}
+```
+
+### 2. User Management
+
+```http
+GET /api/users
+GET /api/user/{id}
+POST /api/users
+PATCH /api/user/{id}/edit
+```
+
+Peran user yang didukung:
+
+- administrator
+- supervisor
+- teller
+
+Status user yang didukung:
+
+- active
+- inactive
+- blocked
+
+### 3. Customer Management
+
+```http
+GET /api/customers
+GET /api/customer/{id}
+POST /api/customers
+PATCH /api/customer/{id}/edit
+```
+
+### 4. Transaksi
+
+```http
+POST /api/user/{customer_id}/transaction
+```
+
+Body:
+
+```json
+{
+  "transaction_type": "deposit",
+  "amount": 500000
+}
+```
+
+atau
+
+```json
+{
+  "transaction_type": "withdrawal",
+  "amount": 200000
+}
+```
+
+Fitur penting:
+
+- cek saldo minimum saat penarikan
+- transaksi dijamin dalam satu database transaction
+- jurnal akuntansi dibuat otomatis untuk tiap transaksi
+- validasi amount > 0
+
+## Role & Access Control
+
+Rute dikelompokkan berdasarkan middleware auth dan role:
+
+- Administrator + Supervisor: melihat data user
+- Administrator + Teller + Supervisor: melihat data customer
+- Administrator: membuat dan memperbarui user/customer
+- Supervisor: dapat diarahkan untuk role tambahan yang sedang dikembangkan
+- Teller: dapat melakukan transaksi untuk customer
+
+## Model Data Utama
+
+### User
+
+Field utama:
+
+- id
+- username
+- password
+- fullname
+- role
+- status
+- timestamps
+
+### Customer
+
+Field utama:
+
+- id
+- account_number
+- student_id
+- student_name
+- student_class
+- balance
+- password
+- pin
+- status
+- timestamps
+
+### Transaction
+
+Field utama:
+
+- id
+- customer_id
+- user_id
+- transaction_date
+- transaction_type
+- amount
+- timestamps
+
+### Accounting Journal
+
+Field utama:
+
+- id
+- transaction_id
+- account_code
+- position
+- amount
+- timestamps
+
+## Catatan Pengembangan
+
+Proyek ini masih dalam tahap pengembangan. Beberapa bagian seperti route tertentu, validasi, serta fitur ekstensif masih dapat disesuaikan dan dikembangkan sesuai kebutuhan bisnis.
+
+## Perintah Umum
+
+```bash
+php artisan test
+php artisan migrate
+php artisan migrate:fresh --seed
+php artisan route:list
+php artisan make:controller NamaController
+```
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Proyek ini menggunakan lisensi default Laravel / MIT sesuai konfigurasi project.
