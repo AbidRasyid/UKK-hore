@@ -3,6 +3,7 @@
 use App\Status;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -20,11 +21,13 @@ return new class extends Migration
             $table->string('student_id')->unique();
             $table->string('student_name');
             $table->string('student_class');
+            $table->unsignedBigInteger('balance');
             $table->string('password');
             $table->string('pin');
             $table->enum('status', array_column(Status::cases(), 'value'))->default(Status::ACTIVE->value);
             $table->timestamps();
         });
+        DB::statement('ALTER TABLE customers ADD CONSTRAINT balance_check CHECK (balance > 0)');
     }
 
     /**
