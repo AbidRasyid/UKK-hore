@@ -14,7 +14,7 @@ class Transaction extends Model
 
     protected $fillable = [
         'customer_id',
-        'user_id',
+        'user_id', 
         'transaction_date',
         'transaction_type',
         'amount'
@@ -30,5 +30,9 @@ class Transaction extends Model
 
     public function accounting_journal(){
         return $this->hasMany(AccountingJournal::class);
+    }
+
+    public function daily_report(){
+        return $this->belongsTo(DailyReport::class);
     }
 }
