@@ -19,6 +19,7 @@ class Customer extends Model
         'student_id',
         'student_name',
         'student_class',
+        'balance',
         'password',
         'pin',
         'status'
@@ -26,7 +27,8 @@ class Customer extends Model
 
     protected $hidden = [
         'password',
-        'pin'
+        'pin',
+        'balance'
     ];
 
     
