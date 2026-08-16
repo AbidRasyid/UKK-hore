@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class TransactionController extends Controller
@@ -49,7 +50,7 @@ class TransactionController extends Controller
             'customer_id' => $customer->id,
             'amount' => $validated['amount'],
             'transaction_type' => $validated['transaction_type'],
-            'transaction_date' => now(), 
+            'transaction_date' => now()->toDateTimeString(), 
         ];
 
         Cache::put('transaction_' . $referenceId, $transactionData, now()->addMinutes(5));
@@ -97,14 +98,14 @@ class TransactionController extends Controller
             $customer = Customer::findOrFail($transactionData['customer_id']);
 
             // Validasi PIN dikembalikan sesuai request Anda
-            if ($validated['pin'] !== $customer->pin) {
+            if (!Hash::check($validated['pin'], $customer->pin)) {
                 return response()->json([
                     'status' => 'fail',
                     'message' => 'Invalid PIN.',
                 ], 401);
             }
 
-            $transaction = DB::transaction(function () use ($validated, $transactionData, $minimumBalance) {
+            $transaction = DB::transaction(function () use ( $transactionData, $minimumBalance) {
                 $new_transaction = Transaction::create([
                     'user_id' => $transactionData['user_id'],
                     'customer_id' => $transactionData['customer_id'],
@@ -162,7 +163,6 @@ class TransactionController extends Controller
 
             Cache::forget('transaction_' . $validated['reference_id']);
 
-            // Sinyal sukses dikembalikan ke Teller agar layar loading-nya selesai
             TransactionCompleted::dispatch([
                 'teller_id' => $transactionData['user_id'], 
                 'transaction' => $transaction
@@ -170,7 +170,7 @@ class TransactionController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => ucfirst($validated['transaction_type']) . ' successful and journal recorded',
+                'message' => ucfirst($transactionData['transaction_type']) . ' successful and journal recorded',
             ], 200);
 
         } catch (\Exception $e) {
