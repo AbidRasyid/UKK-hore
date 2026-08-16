@@ -34,5 +34,9 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::SUPERVISOR->value])->group
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::TELLER->value])->group(function(){
-    Route::post('/user/{customer_id}/transaction', [TransactionController::class, 'store']);
+    Route::post('/user/{customer_id}/transaction/initiate', [TransactionController::class, 'initiate']);
+});
+
+Route::middleware(['auth:customer'])->group(function(){
+    Route::post('/customer/{customer_id}/transaction/confirm', [TransactionController::class, 'confirmStore']);
 });
