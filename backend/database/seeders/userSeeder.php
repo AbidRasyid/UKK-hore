@@ -41,6 +41,7 @@ class userSeeder extends Seeder
             'student_id' => '17756',
             'student_name' => 'customer',
             'student_class' => '12 RPL 1',
+            'balance' => 10000,
             'password' => '234345',
             'pin' => '123456'
         ]);
