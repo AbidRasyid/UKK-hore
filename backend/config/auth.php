@@ -43,7 +43,7 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-        'api_nasabah' => [
+        'customer' => [
             'driver' => 'sanctum',
             'provider' => 'customers',
         ]
