@@ -15,11 +15,15 @@ class TransactionCompleted
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
-     * Create a new event instance.
+     * The event payload.
+     *
+     * @var mixed
      */
-    public function __construct()
+    public $payload;
+
+    public function __construct($payload)
     {
-        //
+        $this->payload = $payload;
     }
 
     /**
@@ -30,7 +34,16 @@ class TransactionCompleted
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            new PrivateChannel('teller' . $this->payload['user_id']),
+        ];
+    }
+
+    public function broadcastAs(): array
+    {
+        return [
+            'status' => 'success',
+            'message' => 'transaction completed',
+            'transaction' => $this->payload,
         ];
     }
 }
