@@ -13,6 +13,8 @@ class Customer extends Model
 {
     use HasFactory, HasApiTokens;
 
+    protected $table = 'customers';
+
     protected $fillable = [
         'user_id',
         'account_number',
