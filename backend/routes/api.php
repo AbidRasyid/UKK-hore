@@ -5,6 +5,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use App\UserRole;
+use App\Http\Controllers\DailyReportController;
 // use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -30,11 +31,15 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->gr
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::SUPERVISOR->value])->group(function(){
-    
+    Route::get('/daily-reports', [DailyReportController::class, 'index']);
+    Route::get('/daily-report/{id}', [DailyReportController::class, 'show']);
+    Route::patch('/daily-report/{id}/approve', [DailyReportController::class, 'approve']);
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::TELLER->value])->group(function(){
     Route::post('/user/{customer_id}/transaction/initiate', [TransactionController::class, 'initiate']);
+    Route::post('/daily-report/{user_id}/initiate', [DailyReportController::class, 'initiateStore']);
+    Route::post('/daily-report/{user_id}/store', [DailyReportController::class, 'store']);
 });
 
 Route::middleware(['auth:customer'])->group(function(){
