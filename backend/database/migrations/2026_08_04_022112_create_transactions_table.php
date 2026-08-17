@@ -22,6 +22,11 @@ return new class extends Migration
     $table->foreignId('user_id')
         ->constrained()
         ->restrictOnDelete();
+    $table->foreignId('daily_report_id')
+        ->constrained()
+       ->restrictOnDelete()
+        ->nullable()
+        ->default(null);
 
     $table->date('transaction_date');
     $table->enum('transaction_type', array_column(TransactionTypes::cases(), 'value'));
@@ -36,6 +41,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        DB::statement('ALTER TABLE transactions DROP CONSTRAINT amount_check');
         Schema::dropIfExists('transactions');
     }
 };
