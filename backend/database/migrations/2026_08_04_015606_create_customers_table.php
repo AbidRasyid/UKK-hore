@@ -35,6 +35,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        DB::statement('ALTER TABLE customers DROP CONSTRAINT balance_check');
         Schema::dropIfExists('customers');
     }
 };
