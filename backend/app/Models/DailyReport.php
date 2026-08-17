@@ -9,6 +9,7 @@ class DailyReport extends Model
     protected $fillable = [
         'user_id',
         'report_date',
+        'opening_balance',
         'total_deposits',
         'total_withdrawals',
         'system_balance',
