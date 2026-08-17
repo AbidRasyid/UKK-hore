@@ -97,7 +97,6 @@ class TransactionController extends Controller
 
             $customer = Customer::findOrFail($transactionData['customer_id']);
 
-            // Validasi PIN dikembalikan sesuai request Anda
             if (!Hash::check($validated['pin'], $customer->pin)) {
                 return response()->json([
                     'status' => 'fail',
