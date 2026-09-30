@@ -22,10 +22,10 @@ class DailyReportController extends Controller
         }
     }
 
-    public function initiateStore(int $id)
+    public function initiateStore(int $user_id)
     {
         $transaction = Transaction::query()
-            ->where('user_id', $id)
+            ->where('user_id', $user_id)
             ->where('daily_report_id', null)
             ->get();
     
@@ -39,7 +39,7 @@ class DailyReportController extends Controller
             ], 200);
     }
 
-    public function store(Request $request, int $id)
+    public function store(Request $request, int $user_id)
     {
         $validated = $request->validate([
             'opening_balance' => ['required', 'integer', 'min:0'],
@@ -62,7 +62,7 @@ class DailyReportController extends Controller
         }
 
         $dailyreport = DailyReport::create([
-            'user_id' => $id,
+            'user_id' => $user_id,
             'report_date' => now()->toDateString(),
             'opening_balance' => $validated['opening_balance'],
             'total_deposits' => $validated['total_deposits'],
@@ -73,7 +73,7 @@ class DailyReportController extends Controller
 
         if($dailyreport) {
             Transaction::query()
-                ->where('user_id', $id)
+                ->where('user_id', $user_id)
                 ->where('daily_report_id', null)
                 ->update(['daily_report_id' => $dailyreport->id]);
         }
@@ -83,10 +83,10 @@ class DailyReportController extends Controller
         ], 201);
     }
 
-    public function show(int $id)
+    public function show(int $daily_report_id)
     {
         try {
-            $dailyreport = DailyReport::findOrFail($id);
+            $dailyreport = DailyReport::findOrFail($daily_report_id);
             return response()->json([
                 'message' => 'data has been loaded successfully',
                 'data' => $dailyreport
@@ -98,10 +98,10 @@ class DailyReportController extends Controller
         }
     }
 
-    public function approve(int $id, Request $request)
+    public function approve(int $daily_report_id, Request $request)
     {
         try {
-            $dailyreport = DailyReport::findOrFail($id);
+            $dailyreport = DailyReport::findOrFail($daily_report_id);
             $dailyreport->update([
                 'status' => 'approved',
                 'approved_by' => $request->user()->id,

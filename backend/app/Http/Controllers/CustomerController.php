@@ -60,10 +60,10 @@ class CustomerController extends Controller
         }
     }
 
-    public function show(int $id):JsonResponse
+    public function show(int $customer_id):JsonResponse
     {
         try {
-            $customer = Customer::findOrFail($id);
+            $customer = Customer::findOrFail($customer_id);
             return response()->json([
                 "message" => "customer has been found successfully",
                 "data" => [
@@ -77,7 +77,7 @@ class CustomerController extends Controller
         }
     }
 
-    public function update(Request $request, int $id):JsonResponse
+    public function update(Request $request, int $customer_id):JsonResponse
     {
         try {
             $validated = $request->validate([
@@ -88,11 +88,13 @@ class CustomerController extends Controller
                 "pin" => ['required', 'string'],
                 "status" => ['nullable', Status::class]
             ]);
-            $customer = Customer::findOrFail($id);
+            $customer = Customer::findOrFail($customer_id);
                 $customer->update([
                     'student_name' => $validated['student_name'],
                     'student_class' => $validated['student_class'],
+                    'password' => $validated['password'],
                     'pin' => $validated['pin'],
+                    'status' => $validated['status'] ?? $customer->status,
                 ]);
                 return response()->json([
                     "message" => "user updated successfully"
@@ -101,6 +103,21 @@ class CustomerController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 "message" => "user failed to update",
+            ], 400);
+        }
+    }
+
+    public function delete(int $customer_id):JsonResponse
+    {
+        try {
+            $customer = Customer::findOrFail($customer_id);
+            $customer->delete();
+            return response()->json([
+                "message" => "customer has been deleted successfully"
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                "message" => "customer failed to delete",
             ], 400);
         }
     }

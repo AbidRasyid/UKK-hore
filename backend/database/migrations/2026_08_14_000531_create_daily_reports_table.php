@@ -18,6 +18,7 @@
                     ->constrained()
                     ->restrictOnDelete();
                 $table->date('report_date')->unique();
+                $table->unsignedBigInteger('opening_balance')->default(0);
                 $table->unsignedBigInteger('total_deposits')->default(0);
                 $table->unsignedBigInteger('total_withdrawals')->default(0);
                 $table->unsignedBigInteger('system_balance')->default(0);

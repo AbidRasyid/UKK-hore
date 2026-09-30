@@ -19,6 +19,24 @@ use Illuminate\Support\Str;
 
 class TransactionController extends Controller
 {
+
+    public function show(int $customer_id){
+        try {
+            $data = Transaction::query()
+                ->where('customer_id', $customer_id)
+                ->orderBy('transaction_date', 'desc')
+                ->get();
+            return response()->json([
+                'message' => 'data has been loaded successfully',
+                'data' => $data
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'data not loaded',
+            ], 500);
+        }
+    }
+
     public function initiate(Request $request, int $customer_id)
     {
         $validated = $request->validate([
@@ -133,7 +151,6 @@ class TransactionController extends Controller
                         break;
 
                     case 'withdrawal':
-                        // Pemotongan dieksekusi di sini dengan aman (atomic query)
                         $updated = Customer::query()
                             ->where('id', $transactionData['customer_id'])
                             ->where('balance', '>=', $transactionData['amount'] + $minimumBalance)

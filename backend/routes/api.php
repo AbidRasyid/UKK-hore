@@ -14,20 +14,21 @@ Route::post('/customer/login', [AuthController::class, 'CustomerLogin']);
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value . ',' . UserRole::SUPERVISOR->value])->group(function(){
     Route::get('/users', [UserController::class, 'index']);
-    Route::get('/user/{id}', [UserController::class, 'show']);
+    Route::get('/user/{user_id}', [UserController::class, 'show']);
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value . ',' . UserRole::TELLER->value . ',' . UserRole::SUPERVISOR->value])->group(function(){
     Route::get('/customers', [CustomerController::class, 'index']);
-    Route::get('/customer/{id}', [CustomerController::class, 'show']);
+    Route::get('/customer/{customer_id}', [CustomerController::class, 'show']);
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->group(function(){
     Route::post('/users', [UserController::class, 'store']);
-    Route::patch('/user/{id}/edit', [UserController::class, 'update']);
+    Route::patch('/user/{user_id}/edit', [UserController::class, 'update']);
 
     Route::post('/customers', [CustomerController::class, 'store']);
-    Route::patch('/customer/{id}/edit', [CustomerController::class, 'update']);
+    Route::patch('/customer/{customer_id}/edit', [CustomerController::class, 'update']);
+    Route::delete('/customer/{customer_id}/delete', [CustomerController::class, 'delete']);
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::SUPERVISOR->value])->group(function(){
@@ -44,4 +45,5 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::TELLER->value])->group(fun
 
 Route::middleware(['auth:customer'])->group(function(){
     Route::post('/customer/{customer_id}/transaction/confirm', [TransactionController::class, 'confirmStore']);
+    Route::get('/customer/{customer_id}/transactions', [TransactionController::class, 'show']);
 });
