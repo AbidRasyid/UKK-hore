@@ -27,6 +27,13 @@
                 $table->foreignId('approved_by')->nullable()->constrained('users')->restrictOnDelete()->default(null);
                 $table->timestamps();
             });
+
+            Schema::table('transactions', function (Blueprint $table) {
+                $table->foreign('daily_report_id')
+                    ->references('id')
+                    ->on('daily_reports')
+                    ->restrictOnDelete();
+            });
         }
 
         /**
@@ -34,6 +41,10 @@
          */
         public function down(): void
         {
+            Schema::table('transactions', function (Blueprint $table) {
+                $table->dropForeign(['daily_report_id']);
+            });
+
             Schema::dropIfExists('daily_reports');
         }
     };

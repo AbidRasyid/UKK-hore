@@ -23,8 +23,6 @@ return new class extends Migration
         ->constrained()
         ->restrictOnDelete();
     $table->foreignId('daily_report_id')
-        ->constrained()
-       ->restrictOnDelete()
         ->nullable()
         ->default(null);
 
