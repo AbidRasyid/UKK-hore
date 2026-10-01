@@ -6,6 +6,7 @@ use App\Http\Requests\UserRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use App\Status;
+use App\Models\Teller;
 
 class UserController extends Controller
 {
@@ -33,6 +34,18 @@ class UserController extends Controller
                 'fullname' => $validated['fullname'],
                 'role' => $validated['role']
             ]);
+            if($user->role === 'teller') {
+                Teller::create([
+                    'user_id' => $user->id,
+                    'name' => $validated['fullname'],
+                    'class' => $validated['class'],
+                    'phone_number' => $validated['phone_number'],
+                ]);
+                return response()->json([
+                    "message" => "User created successfully",
+                    "user" => $user
+                ], 200);
+            }
             return response()->json([
                "message" => "User created successfully",
                 "user" => $user
@@ -108,6 +121,4 @@ class UserController extends Controller
             ], 500);
         }
     }
-
-    public 
 }
