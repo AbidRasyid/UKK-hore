@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\AccountCode;
+use App\enum\AccountCode;
 use App\Events\PinRequested;
 use App\Events\TransactionCompleted;
 use App\Models\AccountingJournal;
 use App\Models\Customer;
 use App\Models\Configuration;
 use App\Models\Transaction;
-use App\Positions;
+use App\enum\Positions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;

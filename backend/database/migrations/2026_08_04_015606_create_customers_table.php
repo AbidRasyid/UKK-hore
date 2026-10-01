@@ -1,6 +1,6 @@
 <?php
 
-use App\Status;
+use App\enum\Status;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;

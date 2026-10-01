@@ -2,6 +2,7 @@ export const menuItems = [
     {
         title: 'Dashboard',
         path: '/',
-        roles: ['admin']
-    }
+        roles: ['administrator', 'teller', 'supervisor']
+    },
+    
 ]

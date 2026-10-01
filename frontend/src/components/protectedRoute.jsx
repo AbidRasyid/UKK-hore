@@ -2,17 +2,26 @@ import { Navigate, Outlet } from "react-router-dom";
 
 const ProtectedRoute = ({ allowedRoles }) => {
     const token = localStorage.getItem('token');
-    const userRole = localStorage.getItem('userRole');
+    let userRole = localStorage.getItem('userRole');
 
-    if(!token) {
+    if (!userRole) {
+        try {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            userRole = user?.role;
+        } catch {
+            userRole = null;
+        }
+    }
+
+    if (!token) {
         return <Navigate to='/login' replace />;
     } 
 
-    if(allowedRoles && !allowedRoles.includes(userRole)) {
-        return <Navigate to='/' replace />
+    if (allowedRoles && !allowedRoles.includes(userRole)) {
+        return <Navigate to='/login' replace />;
     }
 
-    return <Outlet/>;
+    return <Outlet />;
 }
 
 export default ProtectedRoute;

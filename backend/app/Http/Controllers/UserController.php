@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UserRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use App\Status;
+use App\enum\Status;
 use App\Models\Teller;
 
 class UserController extends Controller

@@ -100,19 +100,15 @@ composer install
 npm install
 ```
 
-5. Generate application key
+5. Install dependencies, generate the application key, and run the initial migration
 
 ```bash
-php artisan key:generate
+composer run setup
 ```
 
-6. Jalankan migrasi database
+> Jika dependency sudah terinstall, Anda dapat menjalankan langkah-langkah tersebut secara terpisah dengan `php artisan key:generate`, `php artisan migrate`, dan `npm install && npm run build`.
 
-```bash
-php artisan migrate
-```
-
-7. Jalankan server aplikasi
+6. Jalankan server aplikasi
 
 ```bash
 php artisan serve
@@ -129,6 +125,12 @@ composer run dev
 Semua endpoint API berada di prefix `/api`.
 
 ### 1. Autentikasi
+
+Endpoint yang membutuhkan autentikasi menggunakan token Sanctum pada header berikut:
+
+```http
+Authorization: Bearer <token>
+```
 
 #### Login admin/staf
 
@@ -188,30 +190,47 @@ GET /api/customers
 GET /api/customer/{id}
 POST /api/customers
 PATCH /api/customer/{id}/edit
+DELETE /api/customer/{id}/delete
 ```
 
-### 4. Transaksi
+### 4. Transaksi teller dan customer
+
+Transaksi menggunakan alur dua langkah. Teller membuat permintaan transaksi, lalu customer mengonfirmasi menggunakan PIN.
+
+#### Teller: membuat permintaan transaksi
 
 ```http
-POST /api/user/{customer_id}/transaction
+POST /api/user/{customer_id}/transaction/initiate
 ```
 
 Body:
 
 ```json
 {
-  "transaction_type": "deposit",
-  "amount": 500000
+    "transaction_type": "deposit",
+    "amount": 500000
 }
 ```
 
-atau
+  Nilai `transaction_type` yang tersedia adalah `deposit` dan `withdrawal`. Endpoint ini mengembalikan `reference_id` yang berlaku selama 5 menit.
+
+  #### Customer: mengonfirmasi transaksi
 
 ```json
-{
-  "transaction_type": "withdrawal",
-  "amount": 200000
-}
+  POST /api/customer/{customer_id}/transaction/confirm
+  ```
+
+  ```json
+  {
+    "reference_id": "TRX-uuid",
+    "pin": "123456"
+  }
+  ```
+
+  Customer juga dapat melihat riwayat transaksinya:
+
+  ```http
+  GET /api/customer/{customer_id}/transactions
 ```
 
 Fitur penting:
@@ -221,15 +240,40 @@ Fitur penting:
 - jurnal akuntansi dibuat otomatis untuk tiap transaksi
 - validasi amount > 0
 
-## Role & Access Control
+### 5. Laporan harian
+
+Teller dapat mengambil ringkasan transaksi yang belum masuk laporan, lalu menyimpan laporan harian. Supervisor dapat melihat dan menyetujui laporan.
+
+```http
+POST /api/daily-report/{user_id}/initiate
+POST /api/daily-report/{user_id}/store
+GET /api/daily-reports
+GET /api/daily-report/{id}
+PATCH /api/daily-report/{id}/approve
+```
+
+Body saat menyimpan laporan harian:
+
+```json
+{
+  "opening_balance": 1000000,
+  "system_balance": 1300000,
+  "total_deposits": 500000,
+  "total_withdrawals": 200000,
+  "physical_balance": 1300000
+}
+```
+
+## Role dan Access Control
 
 Rute dikelompokkan berdasarkan middleware auth dan role:
 
 - Administrator + Supervisor: melihat data user
 - Administrator + Teller + Supervisor: melihat data customer
-- Administrator: membuat dan memperbarui user/customer
-- Supervisor: dapat diarahkan untuk role tambahan yang sedang dikembangkan
-- Teller: dapat melakukan transaksi untuk customer
+- Administrator: membuat, memperbarui user/customer, dan menghapus customer
+- Supervisor: melihat serta menyetujui laporan harian
+- Teller: membuat transaksi dan laporan harian
+- Customer: mengonfirmasi transaksi dengan PIN dan melihat riwayat transaksinya
 
 ## Model Data Utama
 

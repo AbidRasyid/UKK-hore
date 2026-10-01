@@ -4,7 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
-use App\UserRole;
+use App\enum\UserRole;
 use App\Http\Controllers\DailyReportController;
 // use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;

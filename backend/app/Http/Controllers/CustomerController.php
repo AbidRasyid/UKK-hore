@@ -3,10 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
-use App\Status;
+use App\enum\Status;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+
+function account_number(Customer $customer) {
+    $now = Carbon::now();
+    $academic_year = $now->month >= 7 ? $now->year : $now->year - 1;
+    return substr($academic_year, -2) . substr($customer->student_id, -4);
+}
 
 class CustomerController extends Controller
 {

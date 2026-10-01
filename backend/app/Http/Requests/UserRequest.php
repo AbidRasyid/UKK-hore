@@ -2,11 +2,11 @@
 
 namespace App\Http\Requests;
 
-use App\Status;
+use App\enum\Status;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-use App\UserRole;
+use App\enum\UserRole;
 use Illuminate\Validation\Rule;
 
 class UserRequest extends FormRequest

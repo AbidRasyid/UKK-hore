@@ -7,12 +7,12 @@ namespace App\Models;
 // use Illuminate\Database\Eloquent\Attributes\Fillable;
 // use Illuminate\Database\Eloquent\Attributes\Hidden;
 // use Illuminate\Database\Eloquent\Attributes\Table;
-use App\UserRole;
+use App\enum\UserRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\Transaction;
-use App\Status;
+use App\enum\Status;
 use Laravel\Sanctum\HasApiTokens;
 
 // use Illuminate\Support\Carbon;
