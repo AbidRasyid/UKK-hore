@@ -1,1 +1,10 @@
 @import 'tailwindcss';
+
+@import "@fontsource/inter";
+@import "@fontsource/jetbrains-mono";
+
+@theme {
+    --font-sans: "inter", "ui-sans-serif", "system-ui", sans-serif;
+
+    --font-mono: "JetBrains Mono", "ui-monospace", "system-ui", monospace;
+}
