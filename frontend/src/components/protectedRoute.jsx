@@ -13,12 +13,15 @@ const ProtectedRoute = ({ allowedRoles }) => {
         }
     }
 
+    const normalizedUserRole = userRole ? userRole.toLowerCase().trim() : '';
+    const normalizedAllowed = allowedRoles ? allowedRoles.map((r) => r.toLowerCase().trim()) : null;
+
     if (!token) {
         return <Navigate to='/login' replace />;
     } 
 
-    if (allowedRoles && !allowedRoles.includes(userRole)) {
-        return <Navigate to='/login' replace />;
+    if (normalizedAllowed && !normalizedAllowed.includes(normalizedUserRole)) {
+        return <Navigate to='/' replace />;
     }
 
     return <Outlet />;
