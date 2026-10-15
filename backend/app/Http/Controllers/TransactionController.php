@@ -20,6 +20,22 @@ use Illuminate\Support\Str;
 class TransactionController extends Controller
 {
 
+    public function teller_show(int $teller_id) {
+        try {
+            $data = Transaction::query()
+                ->where('user_id', $teller_id)
+                ->orderBy('transaction_date', 'desc')
+                ->get();
+            return response()->json([
+                'message' => 'data has been loaded successfully',
+                'data' => $data
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'message' => 'data not loaded',
+            ], 500);
+        }
+    }
     public function show(int $customer_id){
         try {
             $data = Transaction::query()
