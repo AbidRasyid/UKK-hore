@@ -4,7 +4,12 @@
 @import "@fontsource/jetbrains-mono";
 
 @theme {
-    --font-sans: "inter", "ui-sans-serif", "system-ui", sans-serif;
+  --font-sans: "Inter", "inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
 
-    --font-mono: "JetBrains Mono", "ui-monospace", "system-ui", monospace;
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
