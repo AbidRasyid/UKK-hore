@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/customer/login', [AuthController::class, 'CustomerLogin']);
 
+Route::middleware('auth:sanctum')->get('/me', function (\Illuminate\Http\Request $request) {
+    return response()->json($request->user());
+});
+
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value . ',' . UserRole::SUPERVISOR->value])->group(function(){
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/user/{user_id}', [UserController::class, 'show']);
