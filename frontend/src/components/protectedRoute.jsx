@@ -1,30 +1,39 @@
+import { useState, useEffect } from 'react';
 import { Navigate, Outlet } from "react-router-dom";
+import api from '../api/axios';
 
 const ProtectedRoute = ({ allowedRoles }) => {
-    const token = localStorage.getItem('token');
-    let userRole = localStorage.getItem('userRole');
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    if (!userRole) {
-        try {
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            userRole = user?.role;
-        } catch {
-            userRole = null;
-        }
-    }
+  useEffect(() => {
+    // Menembak ke rute bebas role untuk mengambil profile user yang sedang memegang cookie
+    api.get('/api/me')
+      .then(response => {
+        setUser(response.data); // Menyimpan objek data user asli dari DB ke RAM React
+        setLoading(false);
+      })
+      .catch(() => {
+        setUser(null);
+        setLoading(false);
+      });
+  }, []); // Menggunakan [] agar hanya dieksekusi 1 kali saat halaman dibuka
+  
+  if (loading) {
+    return <div>Memverifikasi otentikasi aman...</div>;
+  }
 
-    const normalizedUserRole = userRole ? userRole.toLowerCase().trim() : '';
-    const normalizedAllowed = allowedRoles ? allowedRoles.map((r) => r.toLowerCase().trim()) : null;
+  // Ambil data role asli dari database (misal kolom 'role' di tabel users Anda)
+  const userRole = user?.role?.toLowerCase() || '';
+  const isAllowed = allowedRoles.map(role => role.toLowerCase()).includes(userRole);
 
-    if (!token) {
-        return <Navigate to='/login' replace />;
-    } 
+  // Jika user tidak ditemukan di database atau rolenya tidak diizinkan masuk rute ini
+  if (!user || !isAllowed) {
+    return <Navigate to="/login" replace />;
+  }
 
-    if (normalizedAllowed && !normalizedAllowed.includes(normalizedUserRole)) {
-        return <Navigate to='/' replace />;
-    }
-
-    return <Outlet />;
-}
+  // Jika lolos verifikasi server, buka halaman asli dan alirkan data user ke bawah
+  return <Outlet context={{ user }} />;
+};
 
 export default ProtectedRoute;
