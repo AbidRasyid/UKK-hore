@@ -2,38 +2,25 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import iconLogo from '../assets/Icon.svg';
 import logoutIcon from '../assets/logoutIcon.svg';
 import { getFilteredMenuItems } from '../config/sidebarConfig';
-
-/**
- * Helper to get the authenticated user's role from localStorage
- */
-const getStoredRole = () => {
-  let role = localStorage.getItem('userRole');
-  if (!role) {
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      role = user?.role;
-    } catch {
-      role = null;
-    }
-  }
-  return role ? role.toLowerCase().trim() : '';
-};
+import { useOutletContext } from 'react-router-dom';
+import { purgeBrowserStorageCredentials } from '../utils/cookies';
 
 /**
  * Sidebar navigation component matching the Aside - SideNavBar design.
  * 
  * Props:
  * - role: Optional override for user role ('administrator', 'supervisor', 'teller').
- *         Defaults to current user's role in localStorage.
+ *         Defaults to current user's role in cookies.
  * - terminalId: Optional terminal label, default 'Terminal #042'
  * - onLogout: Optional callback when clicking Logout.
  */
-export default function Sidebar({ role: propRole, terminalId = 'Terminal #042', onLogout }) {
+export default function Sidebar({ terminalId = 'Terminal #042', onLogout }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useOutletContext();
 
-  // Determine user role (passed as prop or retrieved from localStorage)
-  const currentRole = (propRole ? propRole.toLowerCase().trim() : getStoredRole());
+  // Determine user role (passed as prop or retrieved from cookies)
+  const currentRole = (user?.role || undefined)?.toLowerCase().trim();
 
   // Filter menu items by role:
   // - administrator / admin: all buttons shown
@@ -47,9 +34,7 @@ export default function Sidebar({ role: propRole, terminalId = 'Terminal #042', 
       return;
     }
 
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('userRole');
+    purgeBrowserStorageCredentials();
     navigate('/login');
   };
 
