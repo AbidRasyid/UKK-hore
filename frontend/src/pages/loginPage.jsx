@@ -1,28 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
-import axios from "axios";
-
-
-const BankIcon = () => (
-  <svg
-    className="w-7 h-7 text-white"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    aria-hidden="true"
-  >
-    {/* Pediment / triangular roof */}
-    <path d="M12 3.5L2.5 9h19L12 3.5z" />
-    {/* Architrave bar below roof */}
-    <rect x="2.5" y="9.6" width="19" height="1.4" rx="0.3" />
-    {/* 3 Pillars */}
-    <rect x="5.5" y="12" width="2.6" height="6.6" rx="0.4" />
-    <rect x="10.7" y="12" width="2.6" height="6.6" rx="0.4" />
-    <rect x="15.9" y="12" width="2.6" height="6.6" rx="0.4" />
-    {/* Base floor */}
-    <rect x="2.5" y="19.6" width="19" height="1.8" rx="0.4" />
-  </svg>
-);
+import api from "../api/axios.js"; 
+import Icon from "../assets/Icon.svg";
 
 // Solid ID badge icon matching the screenshot input field
 const IdBadgeIcon = ({ className = "w-4 h-4 text-neutral-500" }) => (
@@ -80,36 +60,28 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setErrorMsg("");
-    setInfoMsg("");
-    setIsLoading(true);
-    const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+// Di dalam LoginPage.jsx Anda:
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
 
-    try {
-      const response = await axios.post(`${apiUrl}/login`, {
-        username,
-        password,
-      });
+  try {
+    await api.get("/sanctum/csrf-cookie");
+    
+    // Asumsi endpoint login Laravel Anda mengembalikan data user yang login
+    const response = await api.post("/api/login", { username, password });
+    
+    localStorage.setItem("token", response.data.token);
 
-      const { token, user } = response.data;
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-      if (user?.role) {
-        localStorage.setItem("userRole", user.role);
-      }
-      navigate("/");
-    } catch (error) {
-      setErrorMsg(
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        "Invalid username or password"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    navigate("/");
+  // eslint-disable-next-line no-unused-vars
+  } catch (e) {
+    setErrorMsg("Invalid username or password");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const handleForgotPassword = (e) => {
     e.preventDefault();
@@ -121,7 +93,7 @@ const LoginPage = () => {
       {/* Top Branding Section */}
       <div className="flex flex-col items-center mb-7">
         <div className="w-13 h-13 bg-black rounded-xl flex items-center justify-center shadow-sm">
-          <BankIcon />
+          <img src={Icon} alt="Icon" />
         </div>
         <h1 className="mt-4 text-[22px] font-bold tracking-tight text-neutral-900">
           E-Teller System
