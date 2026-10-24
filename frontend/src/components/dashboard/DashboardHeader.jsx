@@ -29,12 +29,11 @@ export default function DashboardHeader({
               value={searchValue}
               onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-56 sm:w-64 h-9 pl-9 pr-3 bg-[#f1f3f5] border border-transparent rounded-md text-xs sm:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-gray-300 transition-colors"
+              className="w-56 sm:w-96 h-9 pl-9 pr-3 bg-[#f1f3f5] border border-transparent rounded-md text-xs sm:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-gray-300 transition-colors"
             />
           </div>
         ) : (
           <h1 className="text-sm font-semibold text-gray-900">
-            {isAdmin ? 'Administrator Dashboard' : 'Supervisor Dashboard'}
           </h1>
         )}
       </div>
