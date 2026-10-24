@@ -6,7 +6,10 @@ use App\Http\Requests\UserRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use App\enum\Status;
+use App\enum\UserRole;
 use App\Models\Teller;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -32,9 +35,10 @@ class UserController extends Controller
                 'username' => $validated['username'],
                 'password' => $validated['password'],
                 'fullname' => $validated['fullname'],
-                'role' => $validated['role']
+                'role' => $validated['role'],
+                'status' => $validated['status'] ?? Status::ACTIVE->value,
             ]);
-            if($user->role === 'teller') {
+            if($user->role === UserRole::TELLER) {
                 Teller::create([
                     'user_id' => $user->id,
                     'name' => $validated['fullname'],
@@ -71,18 +75,21 @@ class UserController extends Controller
         }
     }
 
-    public function update(UserRequest $request, int $user_id):JsonResponse
+    public function update(Request $request, int $user_id):JsonResponse
     {
-        $validated = $request->validated();
+        $validated = $request->validate([
+            'username' => ['sometimes', 'required', 'string'],
+            'password' => ['sometimes', 'nullable', 'string', 'min:6'],
+            'fullname' => ['sometimes', 'required', 'string'],
+            'role'     => ['sometimes', 'required', Rule::enum(UserRole::class)],
+            'status'   => ['sometimes', 'nullable', Rule::enum(Status::class)],
+        ]);
         try {
             $user = User::findOrFail($user_id);
-            $user->update([
-                'username' => $validated['username'],
-                'password' => $validated['password'],
-                'fullname' => $validated['fullname'],
-                'role' => $validated['role'],
-                'status' => $validated['status']
-            ]);
+            if (array_key_exists('password', $validated) &&empty($validated['password'])){
+                unset($validated['password']);
+            }
+            $user->update($validated);
             return response()->json([
                 "message" => "User updated successfully",
                 "user" => $user
