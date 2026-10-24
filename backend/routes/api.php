@@ -45,6 +45,8 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::TELLER->value])->group(fun
     Route::post('/user/{customer_id}/transaction/initiate', [TransactionController::class, 'initiate']);
     Route::post('/daily-report/{user_id}/initiate', [DailyReportController::class, 'initiateStore']);
     Route::post('/daily-report/{user_id}/store', [DailyReportController::class, 'store']);
+    Route::get('/transactions/{teller_id}', [TransactionController::class, 'teller_daily_show']);
+
 });
 
 Route::middleware(['auth:customer'])->group(function(){
