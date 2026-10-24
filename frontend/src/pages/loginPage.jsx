@@ -63,6 +63,8 @@ const LoginPage = () => {
 // Di dalam LoginPage.jsx Anda:
 const handleLogin = async (e) => {
   e.preventDefault();
+  setErrorMsg("");
+  setInfoMsg("");
   setIsLoading(true);
 
   try {
