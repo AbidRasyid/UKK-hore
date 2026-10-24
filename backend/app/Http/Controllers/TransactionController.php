@@ -16,14 +16,34 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use App\enum\UserRole;
+use App\enum\Status;
 
 class TransactionController extends Controller
 {
 
-    public function teller_show(int $teller_id) {
+    public function teller_daily_show(int $teller_id) {
         try {
+            if (Auth::id() !== $teller_id) {
+                return response()->json([
+                    'message' => 'Unauthorized access',
+                ], 403);
+            }
+            if (Auth::user()->role !== (UserRole::TELLER)) {
+                return response()->json([
+                    'message' => 'Unauthorized access',
+                ], 403);
+            }
+            if (Auth::user()->status !== Status::ACTIVE) {
+                return response()->json([
+                    'message' => 'Unauthorized access',
+                ], 403);
+            }
             $data = Transaction::query()
                 ->where('user_id', $teller_id)
+                ->where(function ($query) {
+                    $query->whereDate('transaction_date', now()->toDateString());
+                })
                 ->orderBy('transaction_date', 'desc')
                 ->get();
             return response()->json([
@@ -33,6 +53,7 @@ class TransactionController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'data not loaded',
+                'error' => $th->getMessage()
             ], 500);
         }
     }
