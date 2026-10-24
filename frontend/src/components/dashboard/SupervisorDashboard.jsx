@@ -35,7 +35,7 @@ export default function SupervisorDashboard() {
 
     const fetchDailyReports = async () => {
       try {
-        const res = await api.get('/daily-reports').catch(() => null);
+        const res = await api.get('/api/daily-reports').catch(() => null);
 
         if (!isMounted) return;
 
