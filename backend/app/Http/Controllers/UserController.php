@@ -9,6 +9,7 @@ use App\enum\Status;
 use App\enum\UserRole;
 use App\Models\Teller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log as FacadesLog;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -27,39 +28,43 @@ class UserController extends Controller
         }
     }
 
-    public function store(UserRequest $request): JsonResponse
-    {
-        $validated = $request->validated();
-        try {
-            $user = User::create([
-                'username' => $validated['username'],
-                'password' => $validated['password'],
-                'fullname' => $validated['fullname'],
-                'role' => $validated['role'],
-                'status' => $validated['status'] ?? Status::ACTIVE->value,
+public function store(UserRequest $request): JsonResponse
+{
+    $validated = $request->validated();
+    
+    try {
+        // 1. Buat User
+        $user = User::create([
+            'username' => $validated['username'],
+            'password' => bcrypt($validated['password']), // Pastikan di-hash jika belum pakai casts 'hashed'
+            'fullname' => $validated['fullname'],
+            'role' => $validated['role'],
+            'status' => $validated['status'] ?? Status::ACTIVE->value,
+        ]);
+
+        if ($user->role === UserRole::TELLER->value || $user->role === UserRole::TELLER) {
+            Teller::create([
+                'user_id' => $user->id,
+                'name' => $validated['fullname'],
+                'class' => $validated['class'] ?? null, 
+                'phone_number' => $validated['phone_number'] ?? null,
             ]);
-            if($user->role === UserRole::TELLER) {
-                Teller::create([
-                    'user_id' => $user->id,
-                    'name' => $validated['fullname'],
-                    'class' => $validated['class'],
-                    'phone_number' => $validated['phone_number'],
-                ]);
-                return response()->json([
-                    "message" => "User created successfully",
-                    "user" => $user
-                ], 200);
-            }
-            return response()->json([
-               "message" => "User created successfully",
-                "user" => $user
-            ], 200);
-        } catch (\Throwable $e) {
-            return response()->json([
-                "message" => "User fail to create successfully",
-            ], 400);
         }
+
+        return response()->json([
+            "message" => "User created successfully",
+            "user" => $user
+        ], 200);
+
+    } catch (\Throwable $e) {
+        FacadesLog::error($e->getMessage()); 
+        
+        return response()->json([
+            "message" => "User failed to create",
+            "error" => $e->getMessage() 
+        ], 400);
     }
+}
 
     public function show(int $user_id): JsonResponse {
         try {
@@ -98,34 +103,6 @@ class UserController extends Controller
             return response()->json([
                 "message" => $e->getMessage(),
             ], 400);
-        }
-    }
-
-    public function block(int $user_id):JsonResponse
-    {
-        try {
-            $user = User::findOrFail($user_id);
-
-            if($user->status === Status::BLOCKED){
-                return response()->json([
-                    "message" => "User has blocked.",
-                ], 400);
-            }
-            $user->update([
-                "status" => Status::BLOCKED->value,
-            ]);
-            return response()->json([
-                "message" => "User has been successfully blocked.",
-                "data" => $user,
-            ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                "message" => "User not found"
-            ], 404);
-        } catch(\Throwable $e){
-            return response()->json([
-                "message" => "Internal Server Error"
-            ], 500);
         }
     }
 }
