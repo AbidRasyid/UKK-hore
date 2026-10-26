@@ -1,56 +1,10 @@
 import { useState } from "react";
+import { Lock, IdCard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
 import api from "../api/axios.js"; 
 import Icon from "../assets/Icon.svg";
 
-// Solid ID badge icon matching the screenshot input field
-const IdBadgeIcon = ({ className = "w-4 h-4 text-neutral-500" }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    aria-hidden="true"
-  >
-    <path
-      fillRule="evenodd"
-      clipRule="evenodd"
-      d="M10 2a1.5 1.5 0 00-1.5 1.5V4H5a2.5 2.5 0 00-2.5 2.5v12A2.5 2.5 0 005 21h14a2.5 2.5 0 002.5-2.5v-12A2.5 2.5 0 0019 4h-3.5v-.5A1.5 1.5 0 0014 2h-4zm1.5 2h1v1h-1V4zM8.5 11.5a1.75 1.75 0 100-3.5 1.75 1.75 0 000 3.5zm-3.25 5.5a3.25 3.25 0 016.5 0H5.25zm8.5-5.25a.75.75 0 01.75-.75h4.25a.75.75 0 010 1.5H14.5a.75.75 0 01-.75-.75zm0 3.25a.75.75 0 01.75-.75h4.25a.75.75 0 010 1.5H14.5a.75.75 0 01-.75-.75z"
-    />
-  </svg>
-);
-
-// Solid padlock icon matching the screenshot access PIN field
-const LockIcon = ({ className = "w-4 h-4 text-neutral-500" }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    aria-hidden="true"
-  >
-    <path
-      fillRule="evenodd"
-      clipRule="evenodd"
-      d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8.5A2.5 2.5 0 006.5 21h11a2.5 2.5 0 002.5-2.5V12a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 5a3 3 0 116 0v3H9V7z"
-    />
-  </svg>
-);
-
-// Solid shield icon with keyhole cutout for the security note
-const ShieldLockIcon = ({ className = "w-3.5 h-3.5 text-neutral-500" }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    aria-hidden="true"
-  >
-    <path
-      fillRule="evenodd"
-      clipRule="evenodd"
-      d="M12 2L4 5.2v5.892c0 5.012 3.415 9.71 8 10.908 4.585-1.198 8-5.896 8-10.908V5.2L12 2zm0 6a2 2 0 00-1 3.732V14.5a1 1 0 102 0v-2.768A2 2 0 0012 8z"
-    />
-  </svg>
-);
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
@@ -130,7 +84,7 @@ const handleLogin = async (e) => {
             </label>
             <div className="relative flex items-center">
               <span className="absolute left-3 text-neutral-400 pointer-events-none flex items-center">
-                <IdBadgeIcon className="w-4 h-4 text-neutral-500" />
+                <IdCard className="w-4 h-4 text-neutral-500"/>
               </span>
               <input
                 id="teller-id"
@@ -164,7 +118,7 @@ const handleLogin = async (e) => {
             </div>
             <div className="relative flex items-center">
               <span className="absolute left-3 text-neutral-400 pointer-events-none flex items-center">
-                <LockIcon className="w-4 h-4 text-neutral-500" />
+                <Lock className="w-4 h-4 text-neutral-500"/>
               </span>
               <input
                 id="access-pin"
@@ -225,7 +179,7 @@ const handleLogin = async (e) => {
 
       {/* Security Footer */}
       <div className="mt-5 flex items-center justify-center gap-1.5 text-xs text-neutral-500 font-normal">
-        <ShieldLockIcon className="w-3.5 h-3.5 text-neutral-500" />
+        <Lock className="w-3.5 h-3.5 text-neutral-500"/>
         <span>End-to-End Encrypted Terminal</span>
       </div>
     </div>
