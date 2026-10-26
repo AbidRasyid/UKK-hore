@@ -27,7 +27,7 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value . ','
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->group(function(){
-    Route::post('/users', [UserController::class, 'store']);
+    Route::post('/user', [UserController::class, 'store']);
     Route::patch('/user/{user_id}/edit', [UserController::class, 'update']);
 
     Route::post('/customers', [CustomerController::class, 'store']);
