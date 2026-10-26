@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import api from '../../api/axios';
 
-export default function AdminDashboard({ onNewAccountClick }) {
+export default function AdminDashboard() {
   const navigate = useNavigate();
   const [totalUsers, setTotalUsers] = useState(null);
   const [totalCustomers, setTotalCustomers] = useState(null);
@@ -75,14 +75,6 @@ export default function AdminDashboard({ onNewAccountClick }) {
     return Number(val).toLocaleString('en-US');
   };
 
-  const handleNewAccount = () => {
-    if (onNewAccountClick) {
-      onNewAccountClick();
-    } else {
-      navigate('/accounts');
-    }
-  };
-
   // Recent system activity placeholder records
   const recentActivities = [
     {
@@ -134,7 +126,7 @@ export default function AdminDashboard({ onNewAccountClick }) {
         <div>
           <button
             type="button"
-            onClick={handleNewAccount}
+            onClick={ () => {navigate('/user/add')} }
             className="inline-flex items-center gap-2 bg-black hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2.5 rounded-md transition-colors shadow-xs cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
