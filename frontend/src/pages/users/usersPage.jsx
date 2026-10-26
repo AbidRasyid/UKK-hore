@@ -47,7 +47,9 @@ export default function UsersPage() {
             <h1 className="text-2xl font-bold text-gray-900">Users</h1>
             <p className="mt-2 text-sm text-gray-600">Manage User access, roles and teller status.</p>
           </div>
-            <button className="bg-black text-white px-5 py-2 rounded-md hover:bg-gray-800">+ Add User</button>
+            <button
+            onClick={() => {navigate('/user/add')}} 
+            className="bg-black text-white px-5 py-2 rounded-md hover:bg-gray-800">+ Add User</button>
           </div>
         {/* User Table */}
         <div className="overflow-x-auto">
