@@ -10,7 +10,7 @@ import SettingsPage from './pages/settingsPage';
 import ProtectedRoute from './components/protectedRoute';
 import Layout from './components/Layout';
 import NotFound from './pages/errors/404'; 
-import UserEditPage from './pages/users/userEditPage';
+import UserFormPage from './pages/users/userFormPage';
 
 function App() {
   return (
@@ -25,7 +25,8 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route element={<ProtectedRoute allowedRoles={['administrator', 'admin']}/>}>
               <Route path="/users" element={<UsersPage />} />
-              <Route path={"/user/:user_id/edit"} element={<UserEditPage/>}/>
+              <Route path='/user/add' element={ <UserFormPage/> }/>
+              <Route path={"/user/:user_id/edit"} element={<UserFormPage/>}/>
               <Route path="/accounts" element={<AccountPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
