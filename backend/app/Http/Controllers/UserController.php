@@ -83,7 +83,7 @@ public function store(UserRequest $request): JsonResponse
     public function update(Request $request, int $user_id):JsonResponse
     {
         $validated = $request->validate([
-            'username' => ['sometimes', 'required', 'string'],
+            'username' => ['sometimes', 'required', 'string', Rule::unique('users', 'username')->ignore($user_id)],
             'password' => ['sometimes', 'nullable', 'string', 'min:6'],
             'fullname' => ['sometimes', 'required', 'string'],
             'role'     => ['sometimes', 'required', Rule::enum(UserRole::class)],
