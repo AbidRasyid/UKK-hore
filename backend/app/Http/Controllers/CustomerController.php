@@ -37,7 +37,7 @@ class CustomerController extends Controller
                 "student_id" => ['required', 'string'],
                 "student_class" => ['required', 'string'],
                 "password" => ['required', 'string'],
-                "pin" => ['required', 'string']
+                "pin" => ['required', 'digits:6']
             ]);
 
             $now = Carbon::now();
@@ -50,6 +50,7 @@ class CustomerController extends Controller
                     'student_name' => $validated['student_name'],
                     'student_class' => $validated['student_class'],
                     'password' => $validated['password'],
+                    'status' => Status::ACTIVE->value,
                     'pin' => $validated['pin'],
                 ]);
 
@@ -91,7 +92,7 @@ class CustomerController extends Controller
                 "student_id" => ['required', 'string'],
                 "student_class" => ['required', 'string'],
                 "password" => ['required', 'string'],
-                "pin" => ['required', 'string'],
+                "pin" => ['required', 'digits:6'],
                 "status" => ['nullable', Status::class]
             ]);
             $customer = Customer::findOrFail($customer_id);
