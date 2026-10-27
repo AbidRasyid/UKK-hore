@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route} from 'react-router-dom'
 import Dashboard from './pages/dashboard';
 import LoginPage from './pages/loginPage';
 import UsersPage from './pages//users/usersPage';
-import AccountPage from './pages/AccountPage';
+import AccountPage from './pages/accounts/AccountPage';
 import ReportPage from './pages/reportPage';
 import JournalsPage from './pages/journalsPage';
 import SettingsPage from './pages/settingsPage';
@@ -27,9 +27,9 @@ function App() {
               <Route path="/users" element={<UsersPage />} />
               <Route path='/user/add' element={ <UserFormPage/> }/>
               <Route path={"/user/:user_id/edit"} element={<UserFormPage/>}/>
-              <Route path="/accounts" element={<AccountPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
+            <Route path="/accounts" element={<AccountPage />} />
             <Route path="/reports" element={<ReportPage />} />
             <Route path="/journals" element={<JournalsPage />} />
           </Route>
