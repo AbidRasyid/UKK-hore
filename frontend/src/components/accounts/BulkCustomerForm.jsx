@@ -1,0 +1,94 @@
+import { Plus, X } from "lucide-react";
+
+const customerFields = [
+  ["student_name", "Name", "Full name"],
+  ["student_id", "Student ID", "Student ID"],
+  ["student_class", "Class", "Class"],
+  ["password", "Password", "Password"],
+  ["pin", "PIN", "PIN"],
+];
+
+export default function BulkCustomerForm({
+  customerRows,
+  isSaving,
+  onClose,
+  onSubmit,
+  onUpdateRow,
+  onRemoveRow,
+  onAddRow,
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <section className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-lg bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Add customer accounts</h2>
+            <p className="mt-1 text-xs text-gray-500">
+              Add rows manually or import an Excel file with columns: Name, Student ID, Class, Password, PIN.
+            </p>
+          </div>
+          <button type="button" onClick={onClose} className="text-gray-500 hover:text-gray-900">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <form onSubmit={onSubmit} className="p-6">
+          <div className="space-y-4">
+            {customerRows.map((row, index) => (
+              <div key={index} className="rounded-md border border-gray-200 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-800">Customer {index + 1}</p>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveRow(index)}
+                    disabled={customerRows.length === 1}
+                    className="text-xs text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <div className="grid gap-3 md:grid-cols-5">
+                  {customerFields.map(([field, label, placeholder]) => (
+                    <label key={field} className="block">
+                      <span className="mb-1.5 block text-xs font-semibold text-gray-600">{label}</span>
+                      <input
+                        type={field === "pin" ? "password" : "text"}
+                        inputMode={field === "pin" ? "numeric" : undefined}
+                        minLength={field === "pin" ? 6 : undefined}
+                        maxLength={field === "pin" ? 6 : undefined}
+                        pattern={field === "pin" ? "\\d{6}" : undefined}
+                        value={row[field]}
+                        onChange={(event) => onUpdateRow(index, field, event.target.value)}
+                        placeholder={placeholder}
+                        className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+            <button
+              type="button"
+              onClick={onAddRow}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:border-gray-500"
+            >
+              <Plus className="h-4 w-4" />
+              Add another row
+            </button>
+            <div className="flex gap-3 sm:justify-end">
+              <button type="button" onClick={onClose} className="h-10 rounded-md border border-gray-300 px-4 text-sm text-gray-700">
+                Cancel
+              </button>
+              <button type="submit" disabled={isSaving} className="h-10 rounded-md bg-black px-4 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60">
+                {isSaving ? "Saving..." : "Save customers"}
+              </button>
+            </div>
+          </div>
+        </form>
+      </section>
+    </div>
+  );
+}
