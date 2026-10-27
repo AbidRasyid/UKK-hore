@@ -17,6 +17,8 @@ export default function UserFormPage(){
     const [fullname, setFullname] = useState('');
     const [role, setRole] = useState('administrator');
     const [status, setStatus] = useState('active');
+    const [tellerClass, setTellerClass] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
 
     useEffect(() => {
         if(!isEdit) return;
@@ -26,10 +28,12 @@ export default function UserFormPage(){
                 const response = await api.get(`/api/user/${user_id}`);
                 setId(response.data.user.id)
                 setFullname(response.data.user.fullname)
-                setPassword(response.data.user.password)
+                setPassword('')
                 setUsername(response.data.user.username)
                 setRole(response.data.user.role)
                 setStatus(response.data.user.status)
+                setTellerClass(response.data.user.teller?.class ?? '')
+                setPhoneNumber(response.data.user.teller?.phone_number ?? '')
             } catch {
                 navigate('/404');
             } finally {
@@ -42,24 +46,58 @@ export default function UserFormPage(){
 
     const handleFormUser = async (e) => {
         e.preventDefault();
+        const isTeller = String(role).toLowerCase() === 'teller';
+        const trimmedUsername = username.trim();
+        const trimmedFullname = fullname.trim();
+        const trimmedPassword = password.trim();
+        const trimmedClass = tellerClass.trim();
+        const trimmedPhoneNumber = phoneNumber.trim();
+
+        if (!trimmedUsername || !trimmedFullname || (!isEdit && !trimmedPassword)) {
+            alert(isEdit
+                ? "Full name and username are required"
+                : "Full name, username, and password are required");
+            return;
+        }
+
+        if (isTeller && (!trimmedClass || !trimmedPhoneNumber)) {
+            alert("Class and phone number are required for tellers");
+            return;
+        }
+
         setIsSubmitting(true);
 
         try{
+            const usersResponse = await api.get('/api/users');
+            const usernameExists = usersResponse.data.data.some((user) =>
+                String(user.username).trim().toLowerCase() === trimmedUsername.toLowerCase()
+                && String(user.id) !== String(id)
+            );
+
+            if (usernameExists) {
+                alert("Username is already taken");
+                return;
+            }
+
             if(isEdit) {
                 await api.patch(`/api/user/${id}/edit`, { 
-                    username, 
-                    password, 
-                    fullname, 
+                    username: trimmedUsername,
+                    password: trimmedPassword,
+                    fullname: trimmedFullname,
                     role, 
-                    status 
+                    status,
+                    class: isTeller ? trimmedClass : null,
+                    phone_number: isTeller ? trimmedPhoneNumber : null
                 });
             }else{
                 const response = await api.post(`/api/user`, { 
-                    username, 
-                    password, 
-                    fullname, 
+                    username: trimmedUsername,
+                    password: trimmedPassword,
+                    fullname: trimmedFullname,
                     role, 
-                    status 
+                    status,
+                    class: isTeller ? trimmedClass : null,
+                    phone_number: isTeller ? trimmedPhoneNumber : null
                 });
 
                 console.log(response)
@@ -137,6 +175,7 @@ export default function UserFormPage(){
                                     value={fullname}
                                     onChange={(e) => setFullname(e.target.value)}
                                     placeholder="Enter full name"
+                                    required
                                     className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                                 />
                             </label>
@@ -151,6 +190,7 @@ export default function UserFormPage(){
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
                                         placeholder="username"
+                                        required
                                         className="h-11 w-full rounded-md border border-[#d1d5db] bg-white pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                                     />
                                 </div>
@@ -166,6 +206,7 @@ export default function UserFormPage(){
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="*****"
+                                        required={!isEdit}
                                         className="h-11 w-full rounded-md border border-[#d1d5db] bg-white pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                                     />
                                 </div>
@@ -214,6 +255,36 @@ export default function UserFormPage(){
                                     </select>
                                 </div>
                             </label>
+
+                            {String(role).toLowerCase() === 'teller' && (
+                                <>
+                                    <label className="block">
+                                        <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">Class</span>
+                                        <input
+                                            type="text"
+                                            name="class"
+                                            value={tellerClass}
+                                            onChange={(e) => setTellerClass(e.target.value)}
+                                            placeholder="Enter class"
+                                            required
+                                            className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
+                                        />
+                                    </label>
+
+                                    <label className="block">
+                                        <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">Phone number</span>
+                                        <input
+                                            type="tel"
+                                            name="phone_number"
+                                            value={phoneNumber}
+                                            onChange={(e) => setPhoneNumber(e.target.value)}
+                                            placeholder="Enter phone number"
+                                            required
+                                            className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
+                                        />
+                                    </label>
+                                </>
+                            )}
                         </div>
 
                         <div className="flex flex-col-reverse gap-3 bg-[#fafafa] px-6 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8">
