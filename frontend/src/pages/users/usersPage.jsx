@@ -2,7 +2,7 @@ import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import api from "../../api/axios";
-import UserRow from "../../components/users/row";
+import UserRow from "../../components/users/userRow";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
