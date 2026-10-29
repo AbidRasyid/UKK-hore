@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, FileSpreadsheet, Plus, X } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import api from "../../api/axios";
 import CustomerRow from "../../components/accounts/accountRow";
@@ -18,6 +19,7 @@ const createEmptyCustomer = () => ({
 
 export default function AccountPage() {
   const { user } = useOutletContext();
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [headerSearch, setHeaderSearch] = useState("");
@@ -277,7 +279,7 @@ export default function AccountPage() {
             </button>
             <button
               type="button"
-              onClick={() => setIsBulkFormOpen(true)}
+              onClick={() => navigate("/account/add")}
               className="inline-flex items-center gap-2 rounded-md bg-black px-5 py-2 text-sm text-white hover:bg-gray-800"
             >
               <Plus className="h-4 w-4" />
@@ -313,6 +315,7 @@ export default function AccountPage() {
                     customer={customer}
                     index={index}
                     onDelete={handleDelete}
+                    onEdit={(selectedCustomer) => navigate(`/account/${selectedCustomer.id}/edit`)}
                   />
                 ))
               ) : (
