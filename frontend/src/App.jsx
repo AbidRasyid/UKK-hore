@@ -11,6 +11,7 @@ import ProtectedRoute from './components/protectedRoute';
 import Layout from './components/Layout';
 import NotFound from './pages/errors/404'; 
 import UserFormPage from './pages/users/userFormPage';
+import CustomerFormPage from './pages/accounts/customerFormPage';
 
 function App() {
   return (
@@ -30,6 +31,8 @@ function App() {
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
             <Route path="/accounts" element={<AccountPage />} />
+            <Route path="/account/add" element={<CustomerFormPage />} />
+            <Route path="/account/:customer_id/edit" element={<CustomerFormPage />} />
             <Route path="/reports" element={<ReportPage />} />
             <Route path="/journals" element={<JournalsPage />} />
           </Route>
