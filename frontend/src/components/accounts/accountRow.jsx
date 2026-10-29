@@ -12,7 +12,7 @@ export default function CustomerRow({ customer, index, onDelete, onEdit, onBlock
       <td className="px-6 py-4 text-sm text-gray-900">{customer.student_id || "-"}</td>
       <td className="px-6 py-4 text-sm text-gray-900">{customer.student_class || "-"}</td>
       <td className="px-6 py-4 text-sm capitalize text-gray-900">{status}</td>
-      <td className="px-6 py-4 text-sm text-gray-900">
+      <td className="px-6 py-4 text-sm text-gray-900 flex gap-2">
         <button
           type="button"
           onClick={() => onEdit(customer)}
