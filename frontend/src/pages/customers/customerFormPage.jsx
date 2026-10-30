@@ -24,7 +24,7 @@ export default function CustomerFormPage() {
     const fetchCustomer = async () => {
       try {
         const response = await api.get(`/api/customer/${customer_id}`);
-        const customer = response.data.customer ?? response.data.data;
+        const customer = response.data.data;
 
         setStudentName(customer.student_name ?? "");
         setStudentId(customer.student_id ?? "");
@@ -55,6 +55,8 @@ export default function CustomerFormPage() {
       status,
     };
 
+
+
     if (!payload.student_name || !payload.student_id || !payload.student_class) {
       alert("Name, student ID, and class are required.");
       return;
@@ -72,6 +74,10 @@ export default function CustomerFormPage() {
 
     if (isEdit && !payload.password) {
       delete payload.password;
+    }
+
+    if (isEdit && !payload.pin){
+      delete payload.pin;
     }
 
     setIsSubmitting(true);

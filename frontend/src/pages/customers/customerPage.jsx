@@ -6,6 +6,7 @@ import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import api from "../../api/axios";
 import CustomerRow from "../../components/accounts/accountRow";
 import * as XLSX from "xlsx";
+import { executeToogleStatus } from "../../utils/toogleStatus";
 
 const normalize = (value) => String(value ?? "").toLowerCase().trim();
 
@@ -17,7 +18,7 @@ const createEmptyCustomer = () => ({
   pin: "",
 });
 
-export default function AccountPage() {
+export default function CustomerPage() {
   const { user } = useOutletContext();
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
@@ -142,6 +143,24 @@ export default function AccountPage() {
       alert("Customer account could not be deleted.");
     }
   };
+
+const handleBlock = async(customer) => {
+    const isBlocked = customer.status === 'blocked'
+    const nextStatus = isBlocked ? "active" : "blocked";
+    const actionText = isBlocked ? "buka blokir" : "blokir";
+
+    console.log("1. Data Customer:", customer); // <-- Cek status aslinya apa
+    console.log("2. Next Status:", nextStatus);  // <-- Cek status barunya apa
+
+    const isSuccess = await executeToogleStatus('/api/customer', customer.id, nextStatus, actionText)
+    
+    console.log("3. Hasil API (isSuccess):", isSuccess); // <-- API sukses atau gagal?
+
+    if(isSuccess){
+      setCustomers(prev => prev.map(c => c.id == customer.id ? {...c, status: nextStatus} : c))
+      console.log("4. State berhasil diupdate!");
+    }
+}
 
   const escapeCsvValue = (value) => {
     const stringValue = String(value ?? "");
@@ -315,6 +334,7 @@ export default function AccountPage() {
                     customer={customer}
                     index={index}
                     onDelete={handleDelete}
+                    onBlock={handleBlock}
                     onEdit={(selectedCustomer) => navigate(`/account/${selectedCustomer.id}/edit`)}
                   />
                 ))
