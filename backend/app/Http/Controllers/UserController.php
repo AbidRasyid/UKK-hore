@@ -36,7 +36,7 @@ public function store(UserRequest $request): JsonResponse
         // 1. Buat User
         $user = User::create([
             'username' => $validated['username'],
-            'password' => bcrypt($validated['password']), // Pastikan di-hash jika belum pakai casts 'hashed'
+            'password' => $validated['password'], 
             'fullname' => $validated['fullname'],
             'role' => $validated['role'],
             'status' => $validated['status'] ?? Status::ACTIVE->value,
@@ -80,17 +80,19 @@ public function store(UserRequest $request): JsonResponse
         }
     }
 
-    public function update(Request $request, int $user_id):JsonResponse
+    public function update(Request $request, $user_id):JsonResponse
     {
+
+        $userId = (int) $user_id;
         $validated = $request->validate([
-            'username' => ['sometimes', 'required', 'string', Rule::unique('users', 'username')->ignore($user_id)],
+            'username' => ['sometimes', 'required', 'string', Rule::unique('users', 'username')->ignore($userId)],
             'password' => ['sometimes', 'nullable', 'string', 'min:6'],
             'fullname' => ['sometimes', 'required', 'string'],
             'role'     => ['sometimes', 'required', Rule::enum(UserRole::class)],
             'status'   => ['sometimes', 'nullable', Rule::enum(Status::class)],
         ]);
         try {
-            $user = User::findOrFail($user_id);
+            $user = User::findOrFail($userId);
             if (array_key_exists('password', $validated) &&empty($validated['password'])){
                 unset($validated['password']);
             }
