@@ -4,14 +4,17 @@ import Dashboard from './pages/dashboard';
 import LoginPage from './pages/loginPage';
 import UsersPage from './pages//users/usersPage';
 import AccountPage from './pages/customers/customerPage';
-import ReportPage from './pages/reportPage';
+import ReportPage from './pages/reports/reportPage';
 import JournalsPage from './pages/journalsPage';
 import SettingsPage from './pages/settingsPage';
+
 import ProtectedRoute from './components/protectedRoute';
 import Layout from './components/Layout';
-import NotFound from './pages/errors/404'; 
+import NotFound from './pages/errors/404';
+
 import UserFormPage from './pages/users/userFormPage';
 import CustomerFormPage from './pages/customers/customerFormPage';
+import ReportDetail from './pages/reports/reportDetail';
 
 function App() {
   return (
@@ -34,6 +37,7 @@ function App() {
             <Route path="/account/add" element={<CustomerFormPage />} />
             <Route path="/account/:customer_id/edit" element={<CustomerFormPage />} />
             <Route path="/reports" element={<ReportPage />} />
+            <Route path="/report/:report_id" element={<ReportDetail />} />
             <Route path="/journals" element={<JournalsPage />} />
           </Route>
         </Route>
