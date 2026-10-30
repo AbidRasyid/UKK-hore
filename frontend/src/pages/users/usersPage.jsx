@@ -22,6 +22,21 @@ export default function UsersPage() {
     };
     fetchData()
   }, [navigate]);
+
+  const handleBlock = async(user) => {
+    const isBlocked = user.status === 'blocked'
+    const nextStatus = isBlocked ? "active" : "blocked";
+    const actionText = isBlocked ? "buka blokir" : "blokir";
+    if (!confirm(`apakah anda yakin ingin ${actionText} orang ini?`)) return;
+    try{
+      await api.patch(`/api/user/${user.id}/edit`, {"status": nextStatus})
+      setUsers(prev => prev.map(u => u.id === user.id ? {...u, status: nextStatus} : u))
+      alert(`user berhasil di-${isBlocked ? 'unblock' : 'block'}`)
+    }catch (error) {
+      console.error("gagal memblokir user", error)
+    }
+  }
+
   const { user } = useOutletContext();
 
   const activeRoleView = (user?.role || '').toLowerCase().trim();
@@ -72,7 +87,7 @@ export default function UsersPage() {
                 </tr>
               ) : (
                 users.map((user, index) => {
-                  return <UserRow key={user.id} user={user} index={index}/>;
+                  return <UserRow key={user.id} user={user} index={index} onBlock={handleBlock}/>;
                 })
               )}
             </tbody>
