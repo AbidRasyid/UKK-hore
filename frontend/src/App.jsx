@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route} from 'react-router-dom'
 import Dashboard from './pages/dashboard';
 import LoginPage from './pages/loginPage';
 import UsersPage from './pages//users/usersPage';
-import AccountPage from './pages/accounts/AccountPage';
+import AccountPage from './pages/customers/customerPage';
 import ReportPage from './pages/reportPage';
 import JournalsPage from './pages/journalsPage';
 import SettingsPage from './pages/settingsPage';
@@ -11,7 +11,7 @@ import ProtectedRoute from './components/protectedRoute';
 import Layout from './components/Layout';
 import NotFound from './pages/errors/404'; 
 import UserFormPage from './pages/users/userFormPage';
-import CustomerFormPage from './pages/accounts/customerFormPage';
+import CustomerFormPage from './pages/customers/customerFormPage';
 
 function App() {
   return (
