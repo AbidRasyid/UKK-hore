@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Transaction;
 use App\Models\DailyReport;
+use App\Models\User;
 
 class DailyReportController extends Controller
 {
@@ -87,13 +88,20 @@ class DailyReportController extends Controller
     {
         try {
             $dailyreport = DailyReport::findOrFail($daily_report_id);
+            $teller = User::find($dailyreport['user_id'], 'fullname');
+            $supervisor = User::find($dailyreport['approved_by'], 'fullname');
+            $transaction = Transaction::where('daily_report_id', '=', $daily_report_id, 'and')->get();
             return response()->json([
                 'message' => 'data has been loaded successfully',
-                'data' => $dailyreport
+                'teller' => $teller->fullname,
+                'supervisor' => $supervisor->fullname ?? null,
+                'data' => $dailyreport,
+                'transactions' => $transaction
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'data not found',
+                'error' => $th->getMessage()
             ], 404);
         }
     }
