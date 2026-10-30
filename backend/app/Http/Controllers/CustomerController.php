@@ -7,6 +7,7 @@ use App\enum\Status;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Validation\Rule;
 
 function account_number(Customer $customer) {
     $now = Carbon::now();
@@ -73,9 +74,7 @@ class CustomerController extends Controller
             $customer = Customer::findOrFail($customer_id);
             return response()->json([
                 "message" => "customer has been found successfully",
-                "data" => [
-                    "customer" => $customer,
-                    ]
+                "data" => $customer
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([
@@ -87,29 +86,51 @@ class CustomerController extends Controller
     public function update(Request $request, int $customer_id):JsonResponse
     {
         try {
-            $validated = $request->validate([
-                "student_name" => ['required', 'string'],
-                "student_id" => ['required', 'string'],
-                "student_class" => ['required', 'string'],
-                "password" => ['required', 'string'],
-                "pin" => ['required', 'digits:6'],
-                "status" => ['nullable', Status::class]
-            ]);
+            $updateData = [];
             $customer = Customer::findOrFail($customer_id);
-                $customer->update([
-                    'student_name' => $validated['student_name'],
-                    'student_class' => $validated['student_class'],
-                    'password' => $validated['password'],
-                    'pin' => $validated['pin'],
-                    'status' => $validated['status'] ?? $customer->status,
-                ]);
-                return response()->json([
-                    "message" => "user updated successfully"
-                ], 200);
+            $validated = $request->validate([
+                "student_name" => ['sometimes', 'required', 'string'],
+                "student_id" => ['sometimes', 'required', 'string'],
+                "student_class" => ['sometimes', 'required', 'string'],
+                "password" => ['sometimes', 'required', 'string'],
+                "pin" => ['sometimes', 'required', 'digits:6'],
+                "status" => ['sometimes', 'nullable', Rule::enum(Status::class)]
+            ]);
+
+            if(array_key_exists('student_id', $validated)){
+                $updateData['student_id'] = $validated['student_id'];
+            }
+
+            if(array_key_exists('student_name', $validated)){
+                $updateData['student_name'] = $validated['student_name'];
+            }
+
+            if(array_key_exists('student_class', $validated)){
+                $updateData['student_class'] = $validated['student_class'];
+            }
+
+            if(array_key_exists('password', $validated)){
+                $updateData['password'] = $validated['password'];
+            }
+
+            if(array_key_exists('pin', $validated)){
+                $updateData['pin'] = $validated['pin'];
+            }
+
+            if(array_key_exists('status', $validated)){
+                $updateData['status'] = $validated['status'];
+            }
+
+            $customer->update($updateData);
+            return response()->json([
+                "message" => "user updated successfully"
+            ], 200);
 
         } catch (\Throwable $th) {
             return response()->json([
                 "message" => "user failed to update",
+                "error" => $th->getMessage(),
+                'line' => $th->getLine()
             ], 400);
         }
     }
