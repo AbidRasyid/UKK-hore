@@ -7,9 +7,14 @@ use App\Http\Controllers\UserController;
 use App\enum\UserRole;
 use App\Http\Controllers\AccountingJournalController;
 use App\Http\Controllers\DailyReportController;
-// use Illuminate\Http\Request;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+Route::post('/test-fcm', function (Request $request) {
+    $token = $request->input('token');
+    $title = $request->input('title', 'Test Notifikasi');
+    $body = $request->input('body', 'Halo dari Laravel!');
+});
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/customer/login', [AuthController::class, 'CustomerLogin']);
 
