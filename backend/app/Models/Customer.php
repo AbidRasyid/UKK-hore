@@ -29,7 +29,6 @@ class Customer extends Model
     protected $hidden = [
         'password',
         'pin',
-        'balance'
     ];
 
     
