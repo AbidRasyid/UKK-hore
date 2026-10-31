@@ -9,6 +9,7 @@ use App\enum\Status;
 use App\enum\UserRole;
 use App\Models\Teller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log as FacadesLog;
 use Illuminate\Validation\Rule;
 
@@ -33,23 +34,26 @@ public function store(UserRequest $request): JsonResponse
     $validated = $request->validated();
     
     try {
-        // 1. Buat User
-        $user = User::create([
-            'username' => $validated['username'],
-            'password' => $validated['password'], 
-            'fullname' => $validated['fullname'],
-            'role' => $validated['role'],
-            'status' => $validated['status'] ?? Status::ACTIVE->value,
-        ]);
-
-        if ($user->role === UserRole::TELLER->value || $user->role === UserRole::TELLER) {
-            Teller::create([
-                'user_id' => $user->id,
-                'name' => $validated['fullname'],
-                'class' => $validated['class'] ?? null, 
-                'phone_number' => $validated['phone_number'] ?? null,
+        $user = DB::transaction(function () use ($validated) {
+            $user = User::create([
+                'username' => $validated['username'],
+                'password' => $validated['password'],
+                'fullname' => $validated['fullname'],
+                'role' => $validated['role'],
+                'status' => $validated['status'] ?? Status::ACTIVE->value,
             ]);
-        }
+
+            if ($user->role === UserRole::TELLER) {
+                Teller::create([
+                    'user_id' => $user->id,
+                    'name' => $validated['fullname'],
+                    'class' => $validated['class'],
+                    'phone_number' => $validated['phone_number'],
+                ]);
+            }
+
+            return $user;
+        });
 
         return response()->json([
             "message" => "User created successfully",
