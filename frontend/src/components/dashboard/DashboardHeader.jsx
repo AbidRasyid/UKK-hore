@@ -11,6 +11,7 @@ export default function DashboardHeader({
   showSearch = true,
   searchOnLeft = false,
   user = null,
+  title = '',
 }) {
   const isTeller = role === 'teller';
   const isAdmin = role === 'administrator' || role === 'admin';
@@ -33,8 +34,7 @@ export default function DashboardHeader({
             />
           </div>
         ) : (
-          <h1 className="text-sm font-semibold text-gray-900">
-          </h1>
+          <h1 className="text-base font-semibold text-gray-900">{title}</h1>
         )}
       </div>
 
