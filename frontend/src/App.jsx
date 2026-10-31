@@ -3,8 +3,8 @@ import { BrowserRouter, Routes, Route} from 'react-router-dom'
 import Dashboard from './pages/dashboard';
 import LoginPage from './pages/loginPage';
 import UsersPage from './pages//users/usersPage';
-import AccountPage from './pages/customers/customerPage';
-import ReportPage from './pages/reports/reportPage';
+import AccountPage from './pages/customers';
+import Reports from './pages/reports';
 import JournalsPage from './pages/journalsPage';
 import SettingsPage from './pages/settingsPage';
 
@@ -14,6 +14,7 @@ import NotFound from './pages/errors/404';
 
 import UserFormPage from './pages/users/userFormPage';
 import CustomerFormPage from './pages/customers/customerFormPage';
+import CustomerTransactionPage from './pages/customers/customerTransactionPage';
 import ReportDetail from './pages/reports/reportDetail';
 
 function App() {
@@ -33,11 +34,27 @@ function App() {
               <Route path={"/user/:user_id/edit"} element={<UserFormPage/>}/>
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
-            <Route path="/accounts" element={<AccountPage />} />
             <Route path="/account/add" element={<CustomerFormPage />} />
             <Route path="/account/:customer_id/edit" element={<CustomerFormPage />} />
-            <Route path="/reports" element={<ReportPage />} />
-            <Route path="/report/:report_id" element={<ReportDetail />} />
+            <Route element={<ProtectedRoute allowedRoles={['teller']}/>}>
+              <Route path="/account/:customer_id/transactions" element={<CustomerTransactionPage />} />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['supervisor', 'teller']}/>}>
+              <Route path="/reports" element={<Reports />} />
+            </Route>
+
+            <Route>
+              <Route path="/accounts" element={<AccountPage />} />
+
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['supervisor']}/>}>
+              <Route path="/report/:report_id" element={<ReportDetail />} />
+            </Route>
+            
+
+
             <Route path="/journals" element={<JournalsPage />} />
           </Route>
         </Route>
