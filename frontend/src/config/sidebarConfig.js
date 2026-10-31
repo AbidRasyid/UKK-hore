@@ -32,7 +32,7 @@ export const menuItems = [
     title: 'Reports',
     path: '/reports',
     icon: reportIcon,
-    roles: ['administrator', 'admin', 'supervisor', 'teller'],
+    roles: ['supervisor', 'teller'],
   },
   {
     id: 'journals',
@@ -60,7 +60,7 @@ export const getFilteredMenuItems = (role) => {
   const normalizedRole = (role || '').toLowerCase().trim();
 
   if (normalizedRole === 'administrator' || normalizedRole === 'admin') {
-    return menuItems;
+    return menuItems.filter((item) => ['dashboard', 'users', 'accounts', 'journals', 'settings'].includes(item.id));
   }
 
   if (normalizedRole === 'supervisor') {
