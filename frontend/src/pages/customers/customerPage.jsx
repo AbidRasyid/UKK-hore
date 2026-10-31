@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Download, FileSpreadsheet, Plus, X } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
-import api from "../../api/axios";
 import CustomerRow from "../../components/accounts/accountRow";
 import * as XLSX from "xlsx";
-import { executeToogleStatus } from "../../utils/toogleStatus";
+import { useCustomers } from "../../hooks/useCustomer";
 
 const normalize = (value) => String(value ?? "").toLowerCase().trim();
 
@@ -21,51 +20,21 @@ const createEmptyCustomer = () => ({
 export default function CustomerPage() {
   const { user } = useOutletContext();
   const navigate = useNavigate();
-  const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [headerSearch, setHeaderSearch] = useState("");
   const [isBulkFormOpen, setIsBulkFormOpen] = useState(false);
   const [customerRows, setCustomerRows] = useState([createEmptyCustomer()]);
-  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef(null);
 
+const { 
+  customers,
+  loading,
+  isSaving,
+  handleDelete,
+  handleBlock,
+  handleBulkSubmit
+ } = useCustomers()
+
   const activeRoleView = normalize(user?.role);
-
-  const fetchCustomers = async () => {
-    try {
-      const response = await api.get("/api/customers");
-      setCustomers(Array.isArray(response.data.data) ? response.data.data : []);
-    } catch (error) {
-      console.error("Failed to load customer accounts", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadCustomers = async () => {
-      try {
-        const response = await api.get("/api/customers");
-        if (isMounted) {
-          setCustomers(Array.isArray(response.data.data) ? response.data.data : []);
-        }
-      } catch (error) {
-        console.error("Failed to load customer accounts", error);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadCustomers();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const filteredCustomers = useMemo(() => {
     const query = normalize(headerSearch);
@@ -95,72 +64,6 @@ export default function CustomerPage() {
     setIsBulkFormOpen(false);
     setCustomerRows([createEmptyCustomer()]);
   };
-
-  const handleBulkSubmit = async (event) => {
-    event.preventDefault();
-    const rows = customerRows.map((row) =>
-      Object.fromEntries(
-        Object.entries(row).map(([field, value]) => [field, value.trim()])
-      )
-    );
-
-    if (rows.some((row) => Object.values(row).some((value) => !value))) {
-      alert("Fill in every customer field before saving.");
-      return;
-    }
-
-    const invalidPin = rows.find((row) => !/^\d{6}$/.test(row.pin));
-    if (invalidPin) {
-      alert("PIN must contain exactly 6 numbers.");
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      await Promise.all(rows.map((row) => api.post("/api/customers", row)));
-      alert(`${rows.length} customer account${rows.length > 1 ? "s" : ""} added successfully.`);
-      setIsSaving(false);
-      closeBulkForm();
-      await fetchCustomers();
-    } catch (error) {
-      console.error("Failed to add customer accounts", error);
-      alert("Customer accounts could not be added. Please check the data and try again.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDelete = async (customer) => {
-    if (!confirm(`Delete the account for ${customer.student_name}?`)) return;
-
-    try {
-      await api.delete(`/api/customer/${customer.id}/delete`);
-      setCustomers((currentCustomers) =>
-        currentCustomers.filter((item) => item.id !== customer.id)
-      );
-    } catch (error) {
-      console.error("Failed to delete customer account", error);
-      alert("Customer account could not be deleted.");
-    }
-  };
-
-const handleBlock = async(customer) => {
-    const isBlocked = customer.status === 'blocked'
-    const nextStatus = isBlocked ? "active" : "blocked";
-    const actionText = isBlocked ? "buka blokir" : "blokir";
-
-    console.log("1. Data Customer:", customer); // <-- Cek status aslinya apa
-    console.log("2. Next Status:", nextStatus);  // <-- Cek status barunya apa
-
-    const isSuccess = await executeToogleStatus('/api/customer', customer.id, nextStatus, actionText)
-    
-    console.log("3. Hasil API (isSuccess):", isSuccess); // <-- API sukses atau gagal?
-
-    if(isSuccess){
-      setCustomers(prev => prev.map(c => c.id == customer.id ? {...c, status: nextStatus} : c))
-      console.log("4. State berhasil diupdate!");
-    }
-}
 
   const escapeCsvValue = (value) => {
     const stringValue = String(value ?? "");
