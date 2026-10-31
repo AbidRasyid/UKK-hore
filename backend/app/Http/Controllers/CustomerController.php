@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
 
+use function Laravel\Prompts\search;
+
 function account_number(Customer $customer) {
     $now = Carbon::now();
     $academic_year = $now->month >= 7 ? $now->year : $now->year - 1;
@@ -68,10 +70,34 @@ class CustomerController extends Controller
         }
     }
 
-    public function show(int $customer_id):JsonResponse
+    public function show($customer_id = null):JsonResponse
     {
         try {
-            $customer = Customer::findOrFail($customer_id);
+            if(is_numeric($customer_id)){
+                $customer = Customer::findOrFail($customer_id);
+
+                return response()->json([
+                    'message' => 'customer has been found successfully',
+                    'data' => $customer
+                ], 200);
+            }
+            
+            $query = Customer::query();
+            
+            if(request()->has('s')) {
+                $search = request()->query('s');
+                $query->where('account_number', 'like', "%{$search}%")
+                        ->orWhere('student_name', 'like', "%{$search}%");
+            }
+
+            $customer = $query->get();
+
+            if($customer->isEmpty()){
+                return response()->json([
+                    "message" => "customers not found",
+                    "data" => []
+                ], 404);
+            }
             return response()->json([
                 "message" => "customer has been found successfully",
                 "data" => $customer
