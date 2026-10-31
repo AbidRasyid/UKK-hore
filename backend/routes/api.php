@@ -5,6 +5,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use App\enum\UserRole;
+use App\Http\Controllers\AccountingJournalController;
 use App\Http\Controllers\DailyReportController;
 // use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -19,11 +20,13 @@ Route::middleware('auth:sanctum')->get('/me', function (\Illuminate\Http\Request
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value . ',' . UserRole::SUPERVISOR->value])->group(function(){
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/user/{user_id}', [UserController::class, 'show']);
+
+        Route::get('/accounting-journals', [AccountingJournalController::class, 'index']);
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value . ',' . UserRole::TELLER->value . ',' . UserRole::SUPERVISOR->value])->group(function(){
     Route::get('/customers', [CustomerController::class, 'index']);
-    Route::get('/customer/{customer_id}', [CustomerController::class, 'show']);
+    Route::get('/customer/{customer_id?}', [CustomerController::class, 'show']);
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->group(function(){
@@ -43,6 +46,7 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::SUPERVISOR->value])->group
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::TELLER->value])->group(function(){
     Route::post('/user/{customer_id}/transaction/initiate', [TransactionController::class, 'initiate']);
+    Route::get('/teller/customer/{customer_id}/transactions', [TransactionController::class, 'show']);
     Route::post('/daily-report/{user_id}/initiate', [DailyReportController::class, 'initiateStore']);
     Route::post('/daily-report/{user_id}/store', [DailyReportController::class, 'store']);
     Route::get('/transactions/{teller_id}', [TransactionController::class, 'teller_daily_show']);
