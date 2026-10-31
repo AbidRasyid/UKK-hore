@@ -30,7 +30,9 @@ class UserRequest extends FormRequest
         'password' => ['required', 'string'],
         'fullname' => ['required', 'string'],
         'role' => ['required', Rule::enum(UserRole::class)],
-        'status' => ['nullable', Rule::enum(Status::class)]
+        'status' => ['nullable', Rule::enum(Status::class)],
+        'class' => ['nullable', 'string', 'required_if:role,teller'],
+        'phone_number' => ['nullable', 'string', 'required_if:role,teller'],
     ];
     }
 }
