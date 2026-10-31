@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import api from "../../api/axios";
 import UserRow from "../../components/users/userRow";
+import { handleBlock } from "../../utils/handlers";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -23,19 +24,7 @@ export default function UsersPage() {
     fetchData()
   }, [navigate]);
 
-  const handleBlock = async(user) => {
-    const isBlocked = user.status === 'blocked'
-    const nextStatus = isBlocked ? "active" : "blocked";
-    const actionText = isBlocked ? "buka blokir" : "blokir";
-    if (!confirm(`apakah anda yakin ingin ${actionText} orang ini?`)) return;
-    try{
-      await api.patch(`/api/user/${user.id}/edit`, {"status": nextStatus})
-      setUsers(prev => prev.map(u => u.id === user.id ? {...u, status: nextStatus} : u))
-      alert(`user berhasil di-${isBlocked ? 'unblock' : 'block'}`)
-    }catch (error) {
-      console.error("gagal memblokir user", error)
-    }
-  }
+  const block = async(user) => handleBlock(user, setUsers, '/api/user')
 
   const { user } = useOutletContext();
 
@@ -87,7 +76,7 @@ export default function UsersPage() {
                 </tr>
               ) : (
                 users.map((user, index) => {
-                  return <UserRow key={user.id} user={user} index={index} onBlock={handleBlock}/>;
+                  return <UserRow key={user.id} user={user} index={index} onBlock={block}/>;
                 })
               )}
             </tbody>
