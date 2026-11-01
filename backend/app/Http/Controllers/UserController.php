@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UserRequest;
+use App\ActivityAction;
 use App\Models\User;
+use App\Services\LogService;
 use Illuminate\Http\JsonResponse;
 use App\enum\Status;
 use App\enum\UserRole;
 use App\Models\Teller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log as FacadesLog;
 use Illuminate\Validation\Rule;
@@ -55,6 +58,12 @@ public function store(UserRequest $request): JsonResponse
             return $user;
         });
 
+        $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+        LogService::record(
+            ActivityAction::USER_CREATED,
+            "User created by {$actor} on User ID {$user->id}. Status: Success. User account created."
+        );
+
         return response()->json([
             "message" => "User created successfully",
             "user" => $user
@@ -62,7 +71,13 @@ public function store(UserRequest $request): JsonResponse
 
     } catch (\Throwable $e) {
         FacadesLog::error($e->getMessage()); 
-        
+        $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+        $username = $validated['username'] ?? 'unknown';
+        LogService::record(
+            ActivityAction::USER_CREATED,
+            "User created by {$actor} on User username {$username}. Status: Failed. {$e->getMessage()}"
+        );
+
         return response()->json([
             "message" => "User failed to create",
             "error" => $e->getMessage() 
@@ -101,11 +116,23 @@ public function store(UserRequest $request): JsonResponse
                 unset($validated['password']);
             }
             $user->update($validated);
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            LogService::record(
+                ActivityAction::USER_UPDATED,
+                "User updated by {$actor} on User ID {$user->id}. Status: Success. User details updated."
+            );
+
             return response()->json([
                 "message" => "User updated successfully",
                 "user" => $user
             ], 200);
         }catch(\Throwable $e){
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            LogService::record(
+                ActivityAction::USER_UPDATED,
+                "User updated by {$actor} on User ID {$userId}. Status: Failed. {$e->getMessage()}"
+            );
+
             return response()->json([
                 "message" => $e->getMessage(),
             ], 400);
