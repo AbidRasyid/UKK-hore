@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\ActivityAction;
 use App\enum\AccountCode;
 use App\Events\PinRequested;
 use App\Events\TransactionCompleted;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\enum\UserRole;
 use App\enum\Status;
+use App\Services\LogService;
 
 class TransactionController extends Controller
 {
@@ -46,6 +48,7 @@ class TransactionController extends Controller
                 })
                 ->orderBy('transaction_date', 'desc')
                 ->get();
+
             return response()->json([
                 'message' => 'data has been loaded successfully',
                 'data' => $data
@@ -86,10 +89,15 @@ class TransactionController extends Controller
         $minimumBalance = $this->getMinimumBalance();
         
         $customer = Customer::findOrFail($customer_id);
-        
         // Hanya cek validasi limit di sini, jangan dipotong dulu
         if ($validated['transaction_type'] === 'withdrawal') {
             if (($customer->balance - $validated['amount']) < $minimumBalance) {
+                $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+                LogService::record(
+                    ActivityAction::TRANSACTION_FAILED,
+                    "Transaction initiation by {$actor} on Customer ID {$customer->id}. Status: Failed. Insufficient balance."
+                );
+
                 return response()->json([
                     'status' => 'fail',
                     'message' => 'insufficient balance',
@@ -112,6 +120,12 @@ class TransactionController extends Controller
 
         PinRequested::dispatch($transactionData);
 
+        $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+        LogService::record(
+            ActivityAction::TRANSACTION_INITIATED,
+            "Transaction initiated by {$actor} on Transaction Ref {$referenceId}. Status: Success. PIN request sent for customer ID {$customer->id}."
+        );
+
         return response()->json([
             'status' => 'success',
             'message' => 'PIN request sent to customer',
@@ -133,6 +147,12 @@ class TransactionController extends Controller
         $lock = Cache::lock('transaction_lock_' . $validated['reference_id'], 10);
 
         if (!$lock->get()) {
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            LogService::record(
+                ActivityAction::TRANSACTION_FAILED,
+                "Transaction confirmation by {$actor} on Transaction Ref {$validated['reference_id']}. Status: Failed. Transaction is already being processed."
+            );
+
             return response()->json([
                 'status' => 'fail',
                 'message' => 'Transaction is being processed. Please try again later.',
@@ -144,6 +164,12 @@ class TransactionController extends Controller
             $minimumBalance = $this->getMinimumBalance(); 
 
             if (!$transactionData) {
+                $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+                LogService::record(
+                    ActivityAction::TRANSACTION_FAILED,
+                    "Transaction confirmation by {$actor} on Transaction Ref {$validated['reference_id']}. Status: Failed. Transaction not found or expired."
+                );
+
                 return response()->json([
                     'status' => 'fail',
                     'message' => 'Transaction not found or expired.',
@@ -153,6 +179,12 @@ class TransactionController extends Controller
             $customer = Customer::findOrFail($transactionData['customer_id']);
 
             if (!Hash::check($validated['pin'], $customer->pin)) {
+                $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+                LogService::record(
+                    ActivityAction::TRANSACTION_FAILED,
+                    "Transaction confirmation by {$actor} on Transaction Ref {$validated['reference_id']}. Status: Failed. Invalid PIN."
+                );
+
                 return response()->json([
                     'status' => 'fail',
                     'message' => 'Invalid PIN.',
@@ -221,12 +253,24 @@ class TransactionController extends Controller
                 'transaction' => $transaction
             ]);
 
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            LogService::record(
+                ActivityAction::TRANSACTION_SUCCESS,
+                "Transaction confirmed by {$actor} on Transaction Ref {$validated['reference_id']}. Status: Success. {$transactionData['transaction_type']} transaction completed."
+            );
+
             return response()->json([
                 'status' => 'success',
                 'message' => ucfirst($transactionData['transaction_type']) . ' successful and journal recorded',
             ], 200);
 
         } catch (\Exception $e) {
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            LogService::record(
+                ActivityAction::TRANSACTION_FAILED,
+                "Transaction confirmation by {$actor} on Transaction Ref {$validated['reference_id']}. Status: Failed. {$e->getMessage()}"
+            );
+
             return response()->json([
                 'status' => 'fail',
                 'message' => 'Transaction failed: ' . $e->getMessage()
