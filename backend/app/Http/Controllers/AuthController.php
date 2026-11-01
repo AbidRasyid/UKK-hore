@@ -7,6 +7,7 @@ use App\enum\Status;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -53,10 +54,10 @@ class AuthController extends Controller
         try {
             $validated = $request->validate([
                 'student_id' => ['required', 'string'],
-                'password' => ['required', 'string']
+                'pin' => ['required', 'string', 'size:6']
             ]);
             $customer = Customer::query()->where('student_id', '=', $validated['student_id'])->first();
-            if ((!$customer || !password_verify($validated['password'], $customer->password))) {
+            if ((!$customer || !Hash::check($validated['pin'], $customer->pin))) {
                 return response()->json([
                     'error' => 'user invalid'
                 ], 400);
