@@ -1,0 +1,29 @@
+<?php
+
+namespace App;
+
+enum ActivityAction: string
+{
+    // Auth
+    case LOGIN_SUCCESS = 'LOGIN_SUCCESS';
+    case LOGIN_FAILED = 'LOGIN_FAILED';
+    case LOGOUT = 'LOGOUT';
+    case PIN_FAILED = 'PIN_FAILED';
+
+    // Transaksi
+    case TRANSACTION_SUCCESS = 'TRANSACTION_SUCCESS';
+    case TRANSACTION_FAILED = 'TRANSACTION_FAILED';
+    case TRANSACTION_INITIATED = 'TRANSACTION_INITIATED';
+
+    // User Management
+    case USER_CREATED = 'USER_CREATED';
+    case USER_UPDATED = 'USER_UPDATED';
+    case USER_BLOCKED = 'USER_BLOCKED';
+    case CUSTOMER_CREATED = 'CUSTOMER_CREATED';
+    case CUSTOMER_UPDATED = 'CUSTOMER_UPDATED';
+    case CUSTOMER_DELETED = 'CUSTOMER_DELETED';
+
+    // Report
+    case REPORT_APPROVED = 'REPORT_APPROVED';
+    case REPORT_REJECTED = 'REPORT_REJECTED';
+}
