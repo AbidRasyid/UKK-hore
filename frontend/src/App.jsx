@@ -16,6 +16,7 @@ import UserFormPage from './pages/users/userFormPage';
 import CustomerFormPage from './pages/customers/customerFormPage';
 import CustomerTransactionPage from './pages/customers/customerTransactionPage';
 import ReportDetail from './pages/reports/reportDetail';
+import DailyReportFormPage from './pages/reports/dailyReportFormPage';
 
 function App() {
   return (
@@ -42,6 +43,9 @@ function App() {
 
             <Route element={<ProtectedRoute allowedRoles={['supervisor', 'teller']}/>}>
               <Route path="/reports" element={<Reports />} />
+            </Route>
+            <Route element={<ProtectedRoute allowedRoles={['teller']}/>}>
+              <Route path="/reports/create" element={<DailyReportFormPage />} />
             </Route>
 
             <Route>
