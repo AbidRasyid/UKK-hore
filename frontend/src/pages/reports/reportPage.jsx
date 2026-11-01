@@ -213,6 +213,7 @@ export default function ReportPage() {
 
                       return (
                         <ReportRow
+                        key={report.id ?? `${report.report_date}-${index}`}
                         report={report}
                         index={index}
                         />
