@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\ActivityAction;
 use App\Models\Customer;
+use App\Services\LogService;
 use App\enum\Status;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 use function Laravel\Prompts\search;
 
@@ -57,6 +60,12 @@ class CustomerController extends Controller
                     'pin' => $validated['pin'],
                 ]);
 
+                $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+                LogService::record(
+                    ActivityAction::CUSTOMER_CREATED,
+                    "Customer created by {$actor} on Customer ID {$customer->id}. Status: Success. Customer account created."
+                );
+
                 return response()->json([
                     "message" => "user created successfully",
                     "data" => [
@@ -64,6 +73,13 @@ class CustomerController extends Controller
                     ] 
                 ], 200);
         }catch(\Throwable $e){
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            $studentId = $validated['student_id'] ?? 'unknown';
+            LogService::record(
+                ActivityAction::CUSTOMER_CREATED,
+                "Customer created by {$actor} on Customer student ID {$studentId}. Status: Failed. {$e->getMessage()}"
+            );
+
             return response()->json([
                 "message" => "user failed to create". $e->getMessage()
             ], 400);
@@ -148,11 +164,23 @@ class CustomerController extends Controller
             }
 
             $customer->update($updateData);
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            LogService::record(
+                ActivityAction::CUSTOMER_UPDATED,
+                "Customer updated by {$actor} on Customer ID {$customer->id}. Status: Success. Customer details updated."
+            );
+
             return response()->json([
                 "message" => "user updated successfully"
             ], 200);
 
         } catch (\Throwable $th) {
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            LogService::record(
+                ActivityAction::CUSTOMER_UPDATED,
+                "Customer updated by {$actor} on Customer ID {$customer_id}. Status: Failed. {$th->getMessage()}"
+            );
+
             return response()->json([
                 "message" => "user failed to update",
                 "error" => $th->getMessage(),
@@ -166,10 +194,22 @@ class CustomerController extends Controller
         try {
             $customer = Customer::findOrFail($customer_id);
             $customer->delete();
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            LogService::record(
+                ActivityAction::CUSTOMER_DELETED,
+                "Customer deleted by {$actor} on Customer ID {$customer->id}. Status: Success. Customer account deleted."
+            );
+
             return response()->json([
                 "message" => "customer has been deleted successfully"
             ], 200);
         } catch (\Throwable $th) {
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            LogService::record(
+                ActivityAction::CUSTOMER_DELETED,
+                "Customer deleted by {$actor} on Customer ID {$customer_id}. Status: Failed. {$th->getMessage()}"
+            );
+
             return response()->json([
                 "message" => "customer failed to delete",
             ], 400);
