@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\ActivityAction;
 use Illuminate\Http\Request;
 use App\Models\Transaction;
 use App\Models\DailyReport;
 use App\Models\User;
+use App\Services\LogService;
+use Illuminate\Support\Facades\Auth;
 
 class DailyReportController extends Controller
 {
@@ -25,19 +28,52 @@ class DailyReportController extends Controller
 
     public function initiateStore(int $user_id)
     {
-        $transaction = Transaction::query()
-            ->where('user_id', $user_id)
-            ->where('daily_report_id', null)
-            ->get();
-    
-        return response()->json([
-            'message' => 'form retrieved successfully',
-            'data' => [
-                'total_deposits' => $transaction->where('transaction_type', 'deposit')->sum('amount'),
-                'total_withdrawals' => $transaction->where('transaction_type', 'withdrawal')->sum('amount'),
-                'system_balance' => $transaction->where('transaction_type', 'deposit')->sum('amount') - $transaction->where('transaction_type', 'withdrawal')->sum('amount'),
-            ]
+        try {
+            $transactions = Transaction::with('customer')
+                ->where('user_id', $user_id)
+                ->whereNull('daily_report_id')
+                ->get();
+
+            $totalDeposits = $transactions->where('transaction_type', 'deposit')->sum('amount');
+            $totalWithdrawals = $transactions->where('transaction_type', 'withdrawal')->sum('amount');
+
+            $formattedTransactions = $transactions->map(function ($trx) {
+                return [
+                    'id' => $trx->id,
+                    'account_number' => $trx->customer ? $trx->customer->account_number : 'Unknown',
+                    'transaction_type' => $trx->transaction_type,
+                    'amount' => $trx->amount,
+                    'transaction_date' => $trx->transaction_date,
+                ];
+            });
+
+            return response()->json([
+                'message' => 'form retrieved successfully',
+                'data' => [
+                    'transactions' => $formattedTransactions,
+                    'total_deposits' => $totalDeposits,
+                    'total_withdrawals' => $totalWithdrawals,
+                    'system_balance' => $totalDeposits - $totalWithdrawals,
+                ]
             ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Failed to retrieve form',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function tellerIndex(int $user_id)
+    {
+        return response()->json([
+            'message' => 'daily reports loaded successfully',
+            'data' => DailyReport::query()
+                ->where('user_id', $user_id)
+                ->latest('report_date')
+                ->latest('id')
+                ->get(),
+        ], 200);
     }
 
     public function store(Request $request, int $user_id)
@@ -114,12 +150,24 @@ class DailyReportController extends Controller
                 'status' => 'approved',
                 'approved_by' => $request->user()->id,
             ]);
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            LogService::record(
+                ActivityAction::REPORT_APPROVED,
+                "Report approved by {$actor} on Daily Report ID {$dailyreport->id}. Status: Success. Daily report approved."
+            );
+
             return response()->json([
                 'message' => 'Daily report approved successfully',
                 'data' => $dailyreport
             ], 200);
         } catch (\Throwable $th) {
-            return response()->json([
+        $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+        LogService::record(
+            ActivityAction::REPORT_APPROVED,
+            "Report approved by {$actor} on Daily Report ID {$daily_report_id}. Status: Failed. {$th->getMessage()}"
+        );
+
+        return response()->json([
                 'message' => 'data not found',
             ], 404);
         }
