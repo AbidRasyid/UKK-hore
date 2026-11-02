@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Events\PinRequested;
+use App\Events\TransactionCompleted;
+use App\Listeners\SendPinNotification;
+use App\Listeners\SendTransactionCompleted;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,4 +23,9 @@ class AppServiceProvider extends ServiceProvider
             DevCommands::except(['vite', 'reverb']);
         }
     }
+
+    protected array $listen = [
+        PinRequested::class => [SendPinNotification::class],
+        TransactionCompleted::class => [SendTransactionCompleted::class]
+    ];
 }
