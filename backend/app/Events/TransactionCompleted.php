@@ -2,21 +2,20 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+// use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
+// use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class TransactionCompleted
+class TransactionCompleted implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * The event payload.
-     *
      * @var mixed
      */
     public $payload;
@@ -34,16 +33,20 @@ class TransactionCompleted
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('teller' . $this->payload['user_id']),
+            new PrivateChannel('teller' . $this->payload['teller_id']),
         ];
     }
 
-    public function broadcastAs(): array
+    public function broadcastAs(): string
+    {
+        return 'Transaction completed';
+    }
+    public function broadcastWith(): array
     {
         return [
             'status' => 'success',
             'message' => 'transaction completed',
-            'transaction' => $this->payload,
+            'transaction' => $this->payload
         ];
     }
 }
