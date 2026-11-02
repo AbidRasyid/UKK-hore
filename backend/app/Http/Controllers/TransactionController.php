@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\ActivityAction;
 use App\enum\AccountCode;
+use App\enum\ActivityAction;
 use App\Events\PinRequested;
 use App\Events\TransactionCompleted;
 use App\Models\AccountingJournal;
@@ -63,9 +63,20 @@ class TransactionController extends Controller
     public function show(int $customer_id){
         try {
             $data = Transaction::query()
+                ->with(['user:id,fullname', 'customer:id,student_name'])
                 ->where('customer_id', $customer_id)
                 ->orderBy('transaction_date', 'desc')
-                ->get();
+                ->get()
+                ->map(function (Transaction $transaction) {
+                    $response = $transaction->toArray();
+                    unset($response['user_id'], $response['customer_id']);
+                    unset($response['user'], $response['customer']);
+                    $response['teller_name'] = $transaction->user?->fullname;
+                    $response['customer_name'] = $transaction->customer?->student_name;
+
+                    return $response;
+                });
+
             return response()->json([
                 'message' => 'data has been loaded successfully',
                 'data' => $data
@@ -147,7 +158,7 @@ class TransactionController extends Controller
         $lock = Cache::lock('transaction_lock_' . $validated['reference_id'], 10);
 
         if (!$lock->get()) {
-            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            $actor = auth::guard('customer')->user()->id;
             LogService::record(
                 ActivityAction::TRANSACTION_FAILED,
                 "Transaction confirmation by {$actor} on Transaction Ref {$validated['reference_id']}. Status: Failed. Transaction is already being processed."
@@ -164,7 +175,7 @@ class TransactionController extends Controller
             $minimumBalance = $this->getMinimumBalance(); 
 
             if (!$transactionData) {
-                $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+                $actor = auth::guard('customer')->user()->id;
                 LogService::record(
                     ActivityAction::TRANSACTION_FAILED,
                     "Transaction confirmation by {$actor} on Transaction Ref {$validated['reference_id']}. Status: Failed. Transaction not found or expired."
@@ -179,7 +190,7 @@ class TransactionController extends Controller
             $customer = Customer::findOrFail($transactionData['customer_id']);
 
             if (!Hash::check($validated['pin'], $customer->pin)) {
-                $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+                $actor = auth::guard('customer')->user()->id;
                 LogService::record(
                     ActivityAction::TRANSACTION_FAILED,
                     "Transaction confirmation by {$actor} on Transaction Ref {$validated['reference_id']}. Status: Failed. Invalid PIN."
