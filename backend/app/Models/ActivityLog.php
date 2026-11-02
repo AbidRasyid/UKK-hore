@@ -8,12 +8,17 @@ class ActivityLog extends Model
 {
     protected $fillable = [
         'user_id',
+        'customer_id',
         'action',
         'description',
         'ip_address'
     ];
 
     public function user(){
-        return $this->hasOne(User::class);
+        return $this->belongsTo(User::class);
+    }
+
+    public function customer(){
+        return $this->belongsTo(Customer::class);
     }
 }
