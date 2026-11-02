@@ -4,12 +4,12 @@ namespace App\Models;
 
 use App\enum\Status;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
 use App\Models\Transaction;
 use Laravel\Sanctum\HasApiTokens;
 
-class Customer extends Model
+class Customer extends Authenticatable
 {
     use HasFactory, HasApiTokens;
 
