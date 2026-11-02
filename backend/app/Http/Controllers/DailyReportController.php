@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\ActivityAction;
+use App\enum\ActivityAction;
 use Illuminate\Http\Request;
 use App\Models\Transaction;
 use App\Models\DailyReport;
