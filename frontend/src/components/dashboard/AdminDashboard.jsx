@@ -1,3 +1,4 @@
+import '../../utils/echo';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -11,23 +12,27 @@ import {
 } from 'lucide-react';
 import api from '../../api/axios';
 
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [totalUsers, setTotalUsers] = useState(null);
   const [totalCustomers, setTotalCustomers] = useState(null);
   const [activeBankAccounts, setActiveBankAccounts] = useState(null);
+  const [logs, setLogs] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
 
     const fetchData = async () => {
       try {
+        // Fetch logs from /api/activity-logs
+        const logsPromise = await api.get('/api/activity-logs').catch(() => null);
         // Fetch users from /api/users
         const usersPromise = api.get('/api/users').catch(() => null);
         // Fetch customers from /api/customers
         const customersPromise = api.get('/api/customers').catch(() => null);
 
-        const [usersRes, customersRes] = await Promise.all([usersPromise, customersPromise]);
+        const [usersRes, customersRes, logsRes] = await Promise.all([usersPromise, customersPromise, logsPromise]);
 
         if (!isMounted) return;
 
@@ -52,6 +57,12 @@ export default function AdminDashboard() {
           setTotalCustomers(845901);
           setActiveBankAccounts(1102440);
         }
+
+        if (logsRes?.data?.data && Array.isArray(logsRes.data.data)){
+          setLogs(logsRes.data.data)
+        } else {
+          setLogs(null)
+        }
       } catch {
         if (!isMounted) return;
         setTotalUsers(12450);
@@ -60,10 +71,19 @@ export default function AdminDashboard() {
       }
     };
 
+    // eslint-disable-next-line no-unused-vars
+    const channel = window.Echo.private('admin.activity-logs')
+      .listen('ActivityLogged', (e) => {
+        console.log('log baru masuk', e);
+
+        setLogs((prevLogs) => [e.log, ...prevLogs]);
+      })
+
     fetchData();
 
     return () => {
       isMounted = false;
+      window.Echo.leaveChannel('admin.activity-logs');
     };
   }, []);
 
@@ -74,42 +94,6 @@ export default function AdminDashboard() {
     }
     return Number(val).toLocaleString('en-US');
   };
-
-  // Recent system activity placeholder records
-  const recentActivities = [
-    {
-      timestamp: '2023-10-27 14:32:01',
-      user: 'Teller_042',
-      action: 'Large Withdrawal Approval',
-      referenceId: 'TRX-8921-A',
-      status: 'Completed',
-      statusType: 'completed',
-    },
-    {
-      timestamp: '2023-10-27 14:28:45',
-      user: 'System_Auto',
-      action: 'End of Day Batch Process',
-      referenceId: 'BCH-1027-D',
-      status: 'Processing',
-      statusType: 'processing',
-    },
-    {
-      timestamp: '2023-10-27 14:15:22',
-      user: 'Admin_Supervisor',
-      action: 'User Permission Modification',
-      referenceId: 'AUD-5521-U',
-      status: 'Completed',
-      statusType: 'completed',
-    },
-    {
-      timestamp: '2023-10-27 14:02:10',
-      user: 'API_Gateway',
-      action: 'Sync Failure - Node B',
-      referenceId: 'ERR-9901-X',
-      status: 'Failed',
-      statusType: 'failed',
-    },
-  ];
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -236,30 +220,30 @@ export default function AdminDashboard() {
             <thead>
               <tr className="border-b border-[#e5e7eb] bg-transparent">
                 <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                  TIMESTAMP
+                  ID
                 </th>
                 <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                  USER / TERMINAL
+                  TIMESTAMP
                 </th>
                 <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
                   ACTION
                 </th>
                 <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                  REFERENCE ID
+                  DESCRIPTION
                 </th>
                 <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans text-center">
-                  STATUS
+                  IP ADDRESS
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e5e7eb]/80">
-              {recentActivities.map((act, index) => {
+              {logs.map((log, index) => {
                 let badgeClass = '';
-                if (act.statusType === 'completed') {
+                if (log.statusType === 'completed') {
                   badgeClass = 'bg-[#15803d] text-white';
-                } else if (act.statusType === 'processing') {
+                } else if (log.statusType === 'processing') {
                   badgeClass = 'bg-[#c58b02] text-white';
-                } else if (act.statusType === 'failed') {
+                } else if (log.statusType === 'failed') {
                   badgeClass = 'bg-[#b91c1c] text-white';
                 }
 
@@ -267,30 +251,30 @@ export default function AdminDashboard() {
                   <tr key={index} className="hover:bg-gray-50/50 transition-colors">
                     {/* TIMESTAMP */}
                     <td className="py-4 px-6 text-sm font-mono text-gray-800 whitespace-nowrap">
-                      {act.timestamp}
+                      {log.id}
                     </td>
 
                     {/* USER / TERMINAL */}
                     <td className="py-4 px-6 text-sm font-medium text-gray-900 whitespace-nowrap font-sans">
-                      {act.user}
+                      {log.created_at}
                     </td>
 
                     {/* ACTION */}
                     <td className="py-4 px-6 text-sm text-gray-800 whitespace-nowrap font-sans">
-                      {act.action}
+                      {log.action}
                     </td>
 
                     {/* REFERENCE ID */}
-                    <td className="py-4 px-6 text-sm font-mono font-medium text-gray-900 whitespace-nowrap">
-                      {act.referenceId}
-                    </td>
+                    <td className="py-4 px-6 text-sm font-medium text-gray-600 font-sans max-w-md whitespace-normal warp-break-words">
+  {log.description}
+</td>
 
                     {/* STATUS */}
                     <td className="py-4 px-6 whitespace-nowrap text-center">
                       <span
                         className={`inline-block min-w-22 text-center text-xs font-medium px-3.5 py-1 rounded-full ${badgeClass} font-sans`}
                       >
-                        {act.status}
+                        {log.ip_address}
                       </span>
                     </td>
                   </tr>
