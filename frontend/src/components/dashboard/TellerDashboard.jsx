@@ -7,6 +7,7 @@ import {
   Search, 
   Info 
 } from 'lucide-react';
+import api from '../../api/axios';
 
 const CashDrawerIcon = ({ className = "w-5 h-5 text-gray-900" }) => (
   <svg
@@ -27,6 +28,8 @@ export default function TellerDashboard() {
   const user = useOutletContext();
   const [quickLookupId, setQuickLookupId] = useState('');
   const [lookupResult, setLookupResult] = useState(null);
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [lookupError, setLookupError] = useState('');
 
   // Personalized session started time
   const [sessionStartTime] = useState(() => {
@@ -60,13 +63,35 @@ export default function TellerDashboard() {
     },
   ];
 
-  const handleLookupSubmit = (e) => {
+  const handleLookupSubmit = async (e) => {
     e.preventDefault();
-    if (!quickLookupId.trim()) return;
-    setLookupResult(`Querying account: ${quickLookupId.trim()}`);
-    setTimeout(() => {
-      navigate(`/accounts?search=${encodeURIComponent(quickLookupId.trim())}`);
-    }, 400);
+    const query = quickLookupId.trim();
+    if (!query) return;
+
+    setIsLookingUp(true);
+    setLookupError('');
+    setLookupResult(null);
+
+    try {
+      const response = await api.get(`/api/customer?s=${encodeURIComponent(query)}`);
+      const customers = Array.isArray(response.data?.data)
+        ? response.data.data
+        : response.data?.data
+          ? [response.data.data]
+          : [];
+
+      if (customers.length === 0) {
+        setLookupError('No customer account found.');
+        return;
+      }
+
+      setLookupResult(customers[0]);
+    } catch (error) {
+      console.error('Failed to look up customer account', error);
+      setLookupError('Failed to look up customer account. Please try again.');
+    } finally {
+      setIsLookingUp(false);
+    }
   };
 
   return (
@@ -253,15 +278,41 @@ export default function TellerDashboard() {
                 <button
                   type="submit"
                   aria-label="Search Account"
+                  disabled={isLookingUp}
                   className="h-10 px-3.5 border-l border-[#e5e7eb] text-gray-600 hover:text-black hover:bg-gray-50 transition cursor-pointer flex items-center justify-center shrink-0"
                 >
                   <Search className="w-4 h-4 stroke-2" />
                 </button>
               </div>
+              {isLookingUp && (
+                <p className="mt-2 text-xs text-gray-500 font-sans">Looking up customer...</p>
+              )}
+              {lookupError && (
+                <p className="mt-2 text-xs text-red-600 font-sans">{lookupError}</p>
+              )}
               {lookupResult && (
-                <p className="mt-2 text-xs text-blue-600 font-mono animate-fade-in">
-                  {lookupResult}
-                </p>
+                <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-xs font-sans">
+                  <div>
+                    <dt className="text-gray-500">Account Number</dt>
+                    <dd className="mt-1 font-mono text-gray-900">{lookupResult.account_number || '-'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-gray-500">Student ID</dt>
+                    <dd className="mt-1 text-gray-900">{lookupResult.student_id || '-'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-gray-500">Student Name</dt>
+                    <dd className="mt-1 text-gray-900">{lookupResult.student_name || '-'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-gray-500">Class</dt>
+                    <dd className="mt-1 text-gray-900">{lookupResult.student_class || '-'}</dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className="text-gray-500">Balance</dt>
+                    <dd className="mt-1 font-mono font-semibold text-gray-900">{lookupResult.balance ?? '-'}</dd>
+                  </div>
+                </dl>
               )}
             </form>
           </div>
