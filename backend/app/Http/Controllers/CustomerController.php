@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\ActivityAction;
+use App\enum\ActivityAction;
 use App\Models\Customer;
 use App\Services\LogService;
 use App\enum\Status;
