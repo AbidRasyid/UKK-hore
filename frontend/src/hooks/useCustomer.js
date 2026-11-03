@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios";
 import { executeToogleStatus } from "../utils/toogleStatus";
+import { useLanguage } from "./useLanguage";
 
 export const useCustomers = () => {
+  const { t } = useLanguage();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -41,14 +43,14 @@ export const useCustomers = () => {
 
   // 2. Fungsi Hapus (Delete)
   const handleDelete = async (customer) => {
-    if (!window.confirm(`Delete the account for ${customer.student_name}?`)) return;
+    if (!window.confirm(`${t("delete_customer_confirm")} ${customer.student_name}?`)) return;
 
     try {
       await api.delete(`/api/customer/${customer.id}/delete`);
       setCustomers((current) => current.filter((item) => item.id !== customer.id));
     } catch (error) {
       console.error("Failed to delete customer account", error);
-      alert("Customer account could not be deleted.");
+      alert(t("customer_delete_error"));
     }
   };
 
@@ -56,9 +58,8 @@ export const useCustomers = () => {
   const handleBlock = async (customer) => {
     const isBlocked = customer.status === 'blocked';
     const nextStatus = isBlocked ? "active" : "blocked";
-    const actionText = isBlocked ? "buka blokir" : "blokir";
 
-    const isSuccess = await executeToogleStatus('/api/customer', customer.id, nextStatus, actionText);
+    const isSuccess = await executeToogleStatus('/api/customer', customer.id, nextStatus);
 
     if (isSuccess) {
       setCustomers(prev => prev.map(c => c.id == customer.id ? { ...c, status: nextStatus } : c));
@@ -74,25 +75,25 @@ export const useCustomers = () => {
     );
 
     if (rows.some((row) => Object.values(row).some((value) => !value))) {
-      alert("Fill in every customer field before saving.");
+      alert(t("fill_every_customer_field"));
       return;
     }
 
     const invalidPin = rows.find((row) => !/^\d{6}$/.test(row.pin));
     if (invalidPin) {
-      alert("PIN must contain exactly 6 numbers.");
+      alert(t("err_pin_must_be_6"));
       return;
     }
 
     setIsSaving(true);
     try {
       await Promise.all(rows.map((row) => api.post("/api/customers", row)));
-      alert(`${rows.length} customer account${rows.length > 1 ? "s" : ""} added successfully.`);
+      alert(`${rows.length} ${t("accounts_added_successfully")}`);
       await fetchCustomers(); 
       closeModal(); 
     } catch (error) {
       console.error("Failed to add customer accounts", error);
-      alert("Customer accounts could not be added. Please check the data and try again.");
+      alert(t("accounts_add_error"));
     } finally {
       setIsSaving(false);
     }
