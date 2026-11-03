@@ -4,6 +4,7 @@ import { useOutletContext } from "react-router-dom";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import api from "../../api/axios";
 import ReportRow from "../../components/reports/reportRow";
+import { useLanguage } from "../../hooks/useLanguage";
 
 const getStatus = (report) => String(report.status ?? "pending").toLowerCase();
 
@@ -27,6 +28,7 @@ const getStatus = (report) => String(report.status ?? "pending").toLowerCase();
 
 export default function ReportPage() {
   const { user } = useOutletContext();
+  const { t } = useLanguage();
   const [reports, setReports] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -48,7 +50,7 @@ export default function ReportPage() {
       setReports(data);
     } catch (error) {
       console.error("Failed to load daily reports", error);
-      setErrorMessage("Daily reports could not be loaded. Please try again.");
+      setErrorMessage(t("daily_reports_load_error"));
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +77,7 @@ export default function ReportPage() {
       } catch (error) {
         console.error("Failed to load daily reports", error);
         if (isMounted) {
-          setErrorMessage("Daily reports could not be loaded. Please try again.");
+          setErrorMessage(t("daily_reports_load_error"));
         }
       } finally {
         if (isMounted) {
@@ -89,7 +91,7 @@ export default function ReportPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [t]);
 
   const filteredReports = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -123,20 +125,20 @@ export default function ReportPage() {
         user={user}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search report date or status..."
+        searchPlaceholder={t("search_report")}
       />
 
       <div className="mx-auto max-w-[1600px] space-y-6 p-6 lg:p-8">
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-              Operations
+              {t("operations")}
             </p>
             <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900">
-              Daily reports
+              {t("daily_reports")}
             </h1>
             <p className="mt-1 text-sm text-gray-500">
-              Review daily teller balances and report approval status.
+              {t("report_page_desc")}
             </p>
           </div>
           <button
@@ -146,34 +148,34 @@ export default function ReportPage() {
             className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#d1d5db] bg-white px-4 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            Refresh
+            {t("refresh")}
           </button>
         </header>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <SummaryCard icon={CalendarDays} label="Total reports" value={summary.total} />
-          <SummaryCard icon={CheckCircle2} label="Approved reports" value={summary.approved} />
-          <SummaryCard icon={Clock3} label="Waiting approval" value={summary.pending} />
+          <SummaryCard icon={CalendarDays} label={`${t("daily_reports")} (${t("status")})`} value={summary.total} />
+          <SummaryCard icon={CheckCircle2} label={t("approved")} value={summary.approved} />
+          <SummaryCard icon={Clock3} label={t("pending")} value={summary.pending} />
         </div>
 
         <section className="overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           <div className="flex flex-col gap-3 border-b border-[#e5e7eb] px-6 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Report history</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t("report_history")}</h2>
               <p className="mt-1 text-sm text-gray-500">
-                {filteredReports.length} report{filteredReports.length === 1 ? "" : "s"} found
+                {filteredReports.length} {filteredReports.length === 1 ? t("report_found") : t("reports_found")}
               </p>
             </div>
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
               className="h-10 rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-700 outline-none focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
-              aria-label="Filter reports by status"
+              aria-label={t("filter_reports_status")}
             >
-              <option value="all">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
+              <option value="all">{t("all_statuses")}</option>
+              <option value="pending">{t("pending")}</option>
+              <option value="approved">{t("approved")}</option>
+              <option value="rejected">{t("rejected")}</option>
             </select>
           </div>
 
@@ -187,7 +189,7 @@ export default function ReportPage() {
               <table className="min-w-262.5 w-full">
                 <thead>
                   <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa]">
-                    {["No", "Report date", "Opening balance", "Deposits", "Withdrawals", "System balance", "Physical balance", "Status"].map((heading) => (
+                    {[t("no"), t("report_date"), t("opening_balance"), t("deposits"), t("withdrawals"), t("system_balance"), t("physical_balance"), t("status")].map((heading) => (
                       <th key={heading} className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                         {heading}
                       </th>
@@ -198,13 +200,13 @@ export default function ReportPage() {
                   {isLoading ? (
                     <tr>
                       <td colSpan="8" className="px-6 py-10 text-center text-sm text-gray-500">
-                        Loading daily reports...
+                        {t("loading_daily_reports")}
                       </td>
                     </tr>
                   ) : filteredReports.length === 0 ? (
                     <tr>
                       <td colSpan="8" className="px-6 py-10 text-center text-sm text-gray-500">
-                        No daily reports found.
+                        {t("no_daily_reports")}
                       </td>
                     </tr>
                   ) : (

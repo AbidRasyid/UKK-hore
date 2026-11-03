@@ -6,6 +6,7 @@ import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import CustomerRow from "../../components/accounts/accountRow";
 import * as XLSX from "xlsx";
 import { useCustomers } from "../../hooks/useCustomer";
+import { useLanguage } from "../../hooks/useLanguage";
 
 const normalize = (value) => String(value ?? "").toLowerCase().trim();
 
@@ -20,6 +21,7 @@ const createEmptyCustomer = () => ({
 export default function CustomerPage() {
   const { user } = useOutletContext();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [headerSearch, setHeaderSearch] = useState("");
   const [isBulkFormOpen, setIsBulkFormOpen] = useState(false);
   const [customerRows, setCustomerRows] = useState([createEmptyCustomer()]);
@@ -72,7 +74,7 @@ const {
 
   const handleExport = () => {
     if (filteredCustomers.length === 0) {
-      alert("There are no customer accounts to export.");
+      alert(t("no_accounts_to_export"));
       return;
     }
 
@@ -129,7 +131,7 @@ const {
       });
 
       if (!rows.length || rows.every((row) => Object.values(row).every((value) => !value))) {
-        alert("The Excel file does not contain customer rows.");
+        alert(t("excel_no_rows"));
         return;
       }
 
@@ -137,13 +139,13 @@ const {
         rows.some((row) => !row[field])
       );
       if (missingFields.length) {
-        alert(`Missing values in imported rows: ${missingFields.join(", ")}`);
+        alert(`${t("missing_imported_values")} ${missingFields.join(", ")}`);
         return;
       }
 
       const invalidPin = rows.some((row) => !/^\d{6}$/.test(row.pin));
       if (invalidPin) {
-        alert("Every imported PIN must contain exactly 6 numbers.");
+        alert(t("pin_must_be_6_digits"));
         return;
       }
 
@@ -151,7 +153,7 @@ const {
       setIsBulkFormOpen(true);
     } catch (error) {
       console.error("Failed to import customer Excel file", error);
-      alert("The Excel file could not be read. Use .xlsx or .xls with the required columns.");
+      alert(t("excel_read_error"));
     }
   };
 
@@ -161,7 +163,7 @@ const {
         role={activeRoleView}
         searchValue={headerSearch}
         onSearchChange={setHeaderSearch}
-        searchPlaceholder="Search account, ID, name..."
+        searchPlaceholder={t("search_account_id_name")}
         showSearch={true}
         searchOnLeft={true}
         user={user}
@@ -170,9 +172,9 @@ const {
       <div className="p-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Accounts</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("accounts")}</h1>
             <p className="mt-2 text-sm text-gray-600">
-              Manage customer accounts and account status.
+              {t("manage_accounts")}
             </p>
           </div>
           <div className="flex gap-3">
@@ -189,7 +191,7 @@ const {
               className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-500 hover:text-gray-900"
             >
               <FileSpreadsheet className="h-4 w-4" />
-              Import Excel
+              {t("import_excel")}
             </button>
             <button
               type="button"
@@ -197,7 +199,7 @@ const {
               className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-500 hover:text-gray-900"
             >
               <Download className="h-4 w-4" />
-              Export Excel
+              {t("export_excel")}
             </button>
             <button
               type="button"
@@ -205,7 +207,7 @@ const {
               className="inline-flex items-center gap-2 rounded-md bg-black px-5 py-2 text-sm text-white hover:bg-gray-800"
             >
               <Plus className="h-4 w-4" />
-              Add customers
+              {t("add_customers")}
             </button>
           </div>
         </div>
@@ -214,20 +216,16 @@ const {
           <table className="min-w-full rounded-lg border border-gray-200 bg-white">
             <thead>
               <tr className="bg-gray-100">
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">No</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Name</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Account number</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Student ID</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Class</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                {[t("no"), t("name"), t("account_number"), t("student_id"), t("class"), t("status"), t("actions")].map((heading) => (
+                  <th key={heading} className="px-6 py-3 text-left text-sm font-medium text-gray-700">{heading}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
-                    Loading...
+                    {t("loading")}
                   </td>
                 </tr>
               ) : filteredCustomers.length > 0 ? (
@@ -244,7 +242,7 @@ const {
               ) : (
                 <tr>
                   <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
-                    No customer accounts found.
+                    {t("no_accounts")}
                   </td>
                 </tr>
               )}
@@ -258,12 +256,12 @@ const {
           <section className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-lg bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Add customer accounts</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{t("add_customer_accounts")}</h2>
                 <p className="mt-1 text-xs text-gray-500">
-                  Add rows manually or import an Excel file with columns: Name, Student ID, Class, Password, PIN.
+                  {t("bulk_customer_help")}
                 </p>
               </div>
-              <button type="button" onClick={closeBulkForm} className="text-gray-500 hover:text-gray-900">
+              <button type="button" onClick={closeBulkForm} aria-label={t("close")} className="text-gray-500 hover:text-gray-900">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -273,23 +271,23 @@ const {
                 {customerRows.map((row, index) => (
                   <div key={index} className="rounded-md border border-gray-200 p-4">
                     <div className="mb-3 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-gray-800">Customer {index + 1}</p>
+                      <p className="text-sm font-semibold text-gray-800">{t("customer_item")} {index + 1}</p>
                       <button
                         type="button"
                         onClick={() => setCustomerRows((rows) => rows.filter((_, rowIndex) => rowIndex !== index))}
                         disabled={customerRows.length === 1}
                         className="text-xs text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
                       >
-                        Remove
+                        {t("remove")}
                       </button>
                     </div>
                     <div className="grid gap-3 md:grid-cols-5">
                       {[
-                        ["student_name", "Name", "Full name"],
-                        ["student_id", "Student ID", "Student ID"],
-                        ["student_class", "Class", "Class"],
-                        ["password", "Password", "Password"],
-                        ["pin", "PIN", "PIN"],
+                        ["student_name", t("name"), t("full_name")],
+                        ["student_id", t("student_id"), t("student_id")],
+                        ["student_class", t("class"), t("class")],
+                        ["password", t("password"), t("password")],
+                        ["pin", t("pin"), t("pin")],
                       ].map(([field, label, placeholder]) => (
                         <label key={field} className="block">
                           <span className="mb-1.5 block text-xs font-semibold text-gray-600">{label}</span>
@@ -318,14 +316,14 @@ const {
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:border-gray-500"
                 >
                   <Plus className="h-4 w-4" />
-                  Add another row
+                  {t("add_another_row")}
                 </button>
                 <div className="flex gap-3 sm:justify-end">
                   <button type="button" onClick={closeBulkForm} className="h-10 rounded-md border border-gray-300 px-4 text-sm text-gray-700">
-                    Cancel
+                    {t("cancel")}
                   </button>
                   <button type="submit" disabled={isSaving} className="h-10 rounded-md bg-black px-4 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60">
-                    {isSaving ? "Saving..." : "Save customers"}
+                    {isSaving ? t("saving") : t("save_customers")}
                   </button>
                 </div>
               </div>

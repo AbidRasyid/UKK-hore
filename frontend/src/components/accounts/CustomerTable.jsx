@@ -1,25 +1,23 @@
 import CustomerRow from "./accountRow";
+import { useLanguage } from "../../hooks/useLanguage";
 
 export default function CustomerTable({ loading, customers, onDelete }) {
+  const { t } = useLanguage();
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full rounded-lg border border-gray-200 bg-white">
         <thead>
           <tr className="bg-gray-100">
-            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">No</th>
-            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Name</th>
-            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Account number</th>
-            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Student ID</th>
-            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Class</th>
-            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-            <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+            {[t("no"), t("name"), t("account_number"), t("student_id"), t("class"), t("status"), t("actions")].map((heading) => (
+              <th key={heading} className="px-6 py-3 text-left text-sm font-medium text-gray-700">{heading}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
           {loading ? (
             <tr>
               <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
-                Loading...
+                {t("loading")}
               </td>
             </tr>
           ) : customers.length > 0 ? (
@@ -34,7 +32,7 @@ export default function CustomerTable({ loading, customers, onDelete }) {
           ) : (
             <tr>
               <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
-                No customer accounts found.
+                {t("no_accounts")}
               </td>
             </tr>
           )}

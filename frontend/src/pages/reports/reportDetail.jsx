@@ -12,6 +12,7 @@ import {
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import api from "../../api/axios";
 import { formatCurrency, formatDate } from "../../utils/format";
+import { useLanguage } from "../../hooks/useLanguage";
 
 const getStatus = (report) => String(report?.status ?? "pending").toLowerCase();
 
@@ -25,6 +26,7 @@ export default function ReportDetail() {
   const { report_id } = useParams();
   const navigate = useNavigate();
   const { user } = useOutletContext();
+  const { t } = useLanguage();
   const [report, setReport] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -113,7 +115,7 @@ export default function ReportDetail() {
           className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to reports
+          {t("back_to_reports")}
         </Link>
       </div>
 
@@ -121,13 +123,13 @@ export default function ReportDetail() {
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-              Operations
+              {t("operations")}
             </p>
             <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900">
-              Daily report detail
+              {t("daily_report_detail")}
             </h1>
             <p className="mt-1 text-sm text-gray-500">
-              Review the teller&apos;s end-of-day balance and approval status.
+              {t("daily_report_detail_desc")}
             </p>
           </div>
           <span
@@ -136,7 +138,7 @@ export default function ReportDetail() {
             }`}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            {status}
+            {t(status) || status}
           </span>
         </header>
 
@@ -151,15 +153,15 @@ export default function ReportDetail() {
             <div className="sm:col-span-2">
               <div className="flex items-center gap-2">
                 <FileText className="h-4 w-4 text-gray-500" />
-                <h2 className="text-sm font-semibold text-gray-900">Report information</h2>
+                <h2 className="text-sm font-semibold text-gray-900">{t("report_information")}</h2>
               </div>
             </div>
-            <DetailField label="Report date" value={formatDate(report.data.report_date)} />
-            <DetailField label="Report ID" value={`#${report.data.id ?? report_id}`} />
-            <DetailField label="Teller" value={report.teller ?? "-"} />
+            <DetailField label={t("report_date")} value={formatDate(report.data.report_date)} />
+            <DetailField label={t("report_id")} value={`#${report.data.id ?? report_id}`} />
+            <DetailField label={t("teller")} value={report.teller ?? "-"} />
             <DetailField
-              label="Approved by"
-              value={report.supervisor ?? "Not approved"}
+              label={t("approved_by")}
+              value={report.supervisor ?? t("not_approved")}
             />
           </div>
 
@@ -167,16 +169,16 @@ export default function ReportDetail() {
             <div className="sm:col-span-2">
               <div className="flex items-center gap-2">
                 <Landmark className="h-4 w-4 text-gray-500" />
-                <h2 className="text-sm font-semibold text-gray-900">Balance summary</h2>
+                <h2 className="text-sm font-semibold text-gray-900">{t("balance_summary")}</h2>
               </div>
             </div>
-            <DetailField label="Opening balance" value={formatCurrency(report.data.opening_balance)} />
-            <DetailField label="System balance" value={formatCurrency(report.data.system_balance)} />
-            <DetailField label="Total deposits" value={formatCurrency(report.data.total_deposits)} />
-            <DetailField label="Total withdrawals" value={formatCurrency(report.data.total_withdrawals)} />
-            <DetailField label="Physical balance" value={formatCurrency(report.data.physical_balance)} />
+            <DetailField label={t("opening_balance")} value={formatCurrency(report.data.opening_balance)} />
+            <DetailField label={t("system_balance")} value={formatCurrency(report.data.system_balance)} />
+            <DetailField label={t("total_deposits")} value={formatCurrency(report.data.total_deposits)} />
+            <DetailField label={t("total_withdrawals")} value={formatCurrency(report.data.total_withdrawals)} />
+            <DetailField label={t("physical_balance")} value={formatCurrency(report.data.physical_balance)} />
             <DetailField
-              label="Balance difference"
+              label={t("balance_difference")}
               value={formatCurrency(Number(report.data.physical_balance) - Number(report.data.system_balance))}
             />
           </div>
@@ -186,8 +188,8 @@ export default function ReportDetail() {
               <UserRound className="mt-0.5 h-4 w-4 shrink-0" />
               <p>
                 {status === "approved"
-                  ? "This report has been reviewed and approved."
-                  : "This report is waiting for supervisor approval."}
+                  ? t("report_approved_message")
+                  : t("report_pending_message")}
               </p>
             </div>
             {canApprove && (
@@ -198,7 +200,7 @@ export default function ReportDetail() {
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-gray-900 px-4 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <CheckCircle2 className="h-4 w-4" />
-                {isApproving ? "Approving..." : "Approve report"}
+                {isApproving ? t("approving") : t("approve_report")}
               </button>
             )}
           </div>
@@ -208,23 +210,23 @@ export default function ReportDetail() {
           <div className="border-b border-[#e5e7eb] px-6 py-5 lg:px-8">
             <div className="flex items-center gap-2">
               <Receipt className="h-4 w-4 text-gray-500" />
-              <h2 className="text-sm font-semibold text-gray-900">Transactions</h2>
+              <h2 className="text-sm font-semibold text-gray-900">{t("transactions")}</h2>
             </div>
             <p className="mt-1 text-sm text-gray-500">
-              {transactions.length} transaction{transactions.length === 1 ? "" : "s"} included in this report.
+              {transactions.length} {transactions.length === 1 ? t("transaction_included_desc") : t("transactions_included_desc")}
             </p>
           </div>
 
           {transactions.length === 0 ? (
             <p className="px-6 py-8 text-center text-sm text-gray-500 lg:px-8">
-              No transactions were recorded for this report.
+              {t("no_transactions_recorded")}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
                   <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa]">
-                    {["No", "Transaction", "Customer", "Date", "Amount"].map((heading) => (
+                    {[t("no"), t("transaction"), t("customer"), t("date"), t("amount")].map((heading) => (
                       <th
                         key={heading}
                         className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
@@ -251,7 +253,7 @@ export default function ReportDetail() {
                             ) : (
                               <ArrowUpRight className="h-4 w-4 text-red-600" />
                             )}
-                            {transactionType}
+                            {t(transactionType) || transactionType}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">

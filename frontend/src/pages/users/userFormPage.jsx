@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import api from "../../api/axios";
 import { ArrowLeft, BriefcaseBusiness, Check, LockKeyhole, Mail, ShieldCheck, UserRound, Eye, EyeClosed } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useLanguage } from "../../hooks/useLanguage";
 
 export default function UserFormPage(){
     const { user_id } = useParams();
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const isEdit = Boolean(user_id);
 
     const [id, setId] = useState('');
@@ -55,13 +57,13 @@ export default function UserFormPage(){
 
         if (!trimmedUsername || !trimmedFullname || (!isEdit && !trimmedPassword)) {
             alert(isEdit
-                ? "Full name and username are required"
-                : "Full name, username, and password are required");
+                ? t("err_name_username_required")
+                : t("err_name_username_pw_required"));
             return;
         }
 
         if (isTeller && (!trimmedClass || !trimmedPhoneNumber)) {
-            alert("Class and phone number are required for tellers");
+            alert(t("err_teller_fields_required"));
             return;
         }
 
@@ -75,7 +77,7 @@ export default function UserFormPage(){
             );
 
             if (usernameExists) {
-                alert("Username is already taken");
+                alert(t("err_username_taken"));
                 return;
             }
 
@@ -110,7 +112,7 @@ export default function UserFormPage(){
             } else if (err.response?.data?.message) {
                 alert(err.response.data.message);
             } else {
-            alert("Data gagal dikirim");
+            alert(t("err_data_send_failed"));
             }
         } finally {
             setIsSubmitting(false)
@@ -140,16 +142,16 @@ export default function UserFormPage(){
                     className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
                 >
                     <ArrowLeft className="h-4 w-4" />
-                    Back to users
+                    {t("back_to_users")}
                 </Link>
             </div>
 
             <div className="mx-auto max-w-5xl space-y-6 p-6 lg:p-8">
                 <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                     <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">User management</p>
-                        <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900">Edit user</h1>
-                        <p className="mt-1 text-sm text-gray-500">Update access details and account status.</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">{t("user_management")}</p>
+                        <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900">{isEdit ? t("edit_user") : t("create_user")}</h1>
+                        <p className="mt-1 text-sm text-gray-500">{isEdit ? t("user_form_edit_desc") : t("user_form_create_desc")}</p>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                         <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -163,25 +165,25 @@ export default function UserFormPage(){
                             <div className="sm:col-span-2">
                                 <div className="flex items-center gap-2">
                                     <UserRound className="h-4 w-4 text-gray-500" />
-                                    <h3 className="text-sm font-semibold text-gray-900">Profile details</h3>
+                                    <h3 className="text-sm font-semibold text-gray-900">{t("profile_details")}</h3>
                                 </div>
                             </div>
 
                             <label className="block">
-                                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">Full name</span>
+                                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">{t("full_name")}</span>
                                 <input
                                     type="text"
                                     name="fullname"
                                     value={fullname}
                                     onChange={(e) => setFullname(e.target.value)}
-                                    placeholder="Enter full name"
+                                    placeholder={t("enter_full_name")}
                                     required
                                     className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                                 />
                             </label>
 
                             <label className="block">
-                                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">Username</span>
+                                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">{t("username")}</span>
                                 <div className="relative">
                                     <UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                                     <input
@@ -189,7 +191,7 @@ export default function UserFormPage(){
                                         name="username"
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
-                                        placeholder="username"
+                                        placeholder={t("enter_username")}
                                         required
                                         className="h-11 w-full rounded-md border border-[#d1d5db] bg-white pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                                     />
@@ -197,7 +199,7 @@ export default function UserFormPage(){
                             </label>
 
                             <label className="block">
-                                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">Password</span>
+                                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">{t("password")}</span>
                                 <div className="relative">
                                     <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                                     <input
@@ -218,13 +220,13 @@ export default function UserFormPage(){
                             <div className="sm:col-span-2">
                                 <div className="flex items-center gap-2">
                                     <ShieldCheck className="h-4 w-4 text-gray-500" />
-                                    <h3 className="text-sm font-semibold text-gray-900">Access and security</h3>
+                                    <h3 className="text-sm font-semibold text-gray-900">{t("access_and_security")}</h3>
                                 </div>
-                                <p className="mt-1 text-xs text-gray-500">Control the staff role and whether this account can sign in.</p>
+                                <p className="mt-1 text-xs text-gray-500">{t("access_security_desc")}</p>
                             </div>
 
                             <label className="block">
-                                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">Role</span>
+                                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">{t("role")}</span>
                                 <div className="relative">
                                     <BriefcaseBusiness className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                                     <select
@@ -233,15 +235,15 @@ export default function UserFormPage(){
                                         onChange={(e) => setRole(e.target.value)}
                                         className="h-11 w-full appearance-none rounded-md border border-[#d1d5db] bg-white pl-9 pr-3 text-sm capitalize text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                                     >
-                                        <option value="administrator">Administrator</option>
-                                        <option value="supervisor">Supervisor</option>
-                                        <option value="teller">Teller</option>
+                                        <option value="administrator">{t("administrator")}</option>
+                                        <option value="supervisor">{t("supervisor")}</option>
+                                        <option value="teller">{t("teller")}</option>
                                     </select>
                                 </div>
                             </label>
 
                             <label className="block">
-                                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">Account status</span>
+                                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">{t("account_status")}</span>
                                 <div className="relative">
                                     <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                                     <select
@@ -250,8 +252,8 @@ export default function UserFormPage(){
                                         onChange={(e) => setStatus(e.target.value)}
                                         className="h-11 w-full appearance-none rounded-md border border-[#d1d5db] bg-white pl-9 pr-3 text-sm capitalize text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                                     >
-                                        <option value="active">Active</option>
-                                        <option value="blocked">Blocked</option>
+                                        <option value="active">{t("active")}</option>
+                                        <option value="blocked">{t("blocked")}</option>
                                     </select>
                                 </div>
                             </label>
@@ -259,26 +261,26 @@ export default function UserFormPage(){
                             {String(role).toLowerCase() === 'teller' && (
                                 <>
                                     <label className="block">
-                                        <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">Class</span>
+                                        <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">{t("class")}</span>
                                         <input
                                             type="text"
                                             name="class"
                                             value={tellerClass}
                                             onChange={(e) => setTellerClass(e.target.value)}
-                                            placeholder="Enter class"
+                                            placeholder={t("enter_class")}
                                             required
                                             className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                                         />
                                     </label>
 
                                     <label className="block">
-                                        <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">Phone number</span>
+                                        <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">{t("phone_number")}</span>
                                         <input
                                             type="tel"
                                             name="phone_number"
                                             value={phoneNumber}
                                             onChange={(e) => setPhoneNumber(e.target.value)}
-                                            placeholder="Enter phone number"
+                                            placeholder={t("enter_phone_number")}
                                             required
                                             className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                                         />
@@ -293,7 +295,7 @@ export default function UserFormPage(){
                                     to="/users"
                                     className="inline-flex h-10 items-center justify-center rounded-md border border-[#d1d5db] bg-white px-4 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:text-gray-900"
                                 >
-                                    Cancel
+                                    {t("cancel")}
                                 </Link>
                                 <button
                                     type="submit"
@@ -301,7 +303,7 @@ export default function UserFormPage(){
                                     className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-black px-4 text-sm font-medium text-white transition hover:bg-neutral-800"
                                 >
                                     <Check className="h-4 w-4" />
-                                    { isSubmitting ? "saving . ." : isEdit ? "Save Change" : "Create user" }
+                                    { isSubmitting ? t("saving") : isEdit ? t("save_change") : t("create_user") }
                                 </button>
                             </div>
                         </div>

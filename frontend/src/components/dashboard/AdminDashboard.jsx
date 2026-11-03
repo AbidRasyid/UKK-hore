@@ -7,14 +7,15 @@ import {
   CreditCard, 
   AlertTriangle, 
   TrendingUp, 
-  Plus,
+  Plus, 
   Minus
 } from 'lucide-react';
 import api from '../../api/axios';
-
+import { useLanguage } from '../../hooks/useLanguage';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [totalUsers, setTotalUsers] = useState(null);
   const [totalCustomers, setTotalCustomers] = useState(null);
   const [activeBankAccounts, setActiveBankAccounts] = useState(null);
@@ -101,10 +102,10 @@ export default function AdminDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900 font-sans">
-            System Overview
+            {t('system_overview')}
           </h1>
           <p className="mt-1 text-sm text-gray-500 font-sans">
-            Real-time administrative metrics and access
+            {t('realtime_admin_metrics')}
           </p>
         </div>
         <div>
@@ -114,7 +115,7 @@ export default function AdminDashboard() {
             className="inline-flex items-center gap-2 bg-black hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2.5 rounded-md transition-colors shadow-xs cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>New Account</span>
+            <span>{t('new_account')}</span>
           </button>
         </div>
       </div>
@@ -125,7 +126,7 @@ export default function AdminDashboard() {
         <div className="bg-white border border-[#e5e7eb] rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              TOTAL USERS
+              {t('total_users')}
             </span>
             <Users className="w-5 h-5 text-gray-700 stroke-[1.8]" />
           </div>
@@ -136,7 +137,7 @@ export default function AdminDashboard() {
           </div>
           <div className="mt-2.5 flex items-center gap-1.5 text-xs font-medium text-emerald-600 font-sans">
             <TrendingUp className="w-3.5 h-3.5 stroke-[2.2]" />
-            <span>+4.2% from last week</span>
+            <span>+4.2% {t('from_last_week')}</span>
           </div>
         </div>
 
@@ -144,7 +145,7 @@ export default function AdminDashboard() {
         <div className="bg-white border border-[#e5e7eb] rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              TOTAL CUSTOMERS
+              {t('total_customers')}
             </span>
             <User className="w-5 h-5 text-gray-700 stroke-[1.8]" />
           </div>
@@ -155,7 +156,7 @@ export default function AdminDashboard() {
           </div>
           <div className="mt-2.5 flex items-center gap-1.5 text-xs font-medium text-emerald-600 font-sans">
             <TrendingUp className="w-3.5 h-3.5 stroke-[2.2]" />
-            <span>+1.8% from last week</span>
+            <span>+1.8% {t('from_last_week')}</span>
           </div>
         </div>
 
@@ -163,7 +164,7 @@ export default function AdminDashboard() {
         <div className="bg-white border border-[#e5e7eb] rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              ACTIVE BANK ACCOUNTS
+              {t('active_bank_accounts')}
             </span>
             <CreditCard className="w-5 h-5 text-gray-700 stroke-[1.8]" />
           </div>
@@ -174,7 +175,7 @@ export default function AdminDashboard() {
           </div>
           <div className="mt-2.5 flex items-center gap-1.5 text-xs font-normal text-gray-500 font-sans">
             <Minus className="w-3.5 h-3.5 stroke-2" />
-            <span>Steady volume</span>
+            <span>{t('steady_volume')}</span>
           </div>
         </div>
 
@@ -182,7 +183,7 @@ export default function AdminDashboard() {
         <div className="bg-white border border-[#e5e7eb] rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              SYSTEM ACTIVITY ALERTS
+              {t('system_activity_alerts')}
             </span>
             <AlertTriangle className="w-5 h-5 text-amber-500 stroke-2" />
           </div>
@@ -193,7 +194,7 @@ export default function AdminDashboard() {
           </div>
           <div className="mt-2.5 flex items-center gap-1.5 text-xs font-medium text-[#b45309] font-sans">
             <TrendingUp className="w-3.5 h-3.5 stroke-[2.2]" />
-            <span>+12 alerts pending review</span>
+            <span>+12 {t('alerts_pending_review')}</span>
           </div>
         </div>
       </div>
@@ -203,14 +204,14 @@ export default function AdminDashboard() {
         {/* Table Title Bar */}
         <div className="px-6 py-4 flex items-center justify-between border-b border-[#e5e7eb]">
           <h2 className="text-base font-semibold text-gray-900 font-sans">
-            Recent System Activity
+            {t('recent_system_activity')}
           </h2>
           <button
             type="button"
             onClick={() => navigate('/journals')}
             className="text-sm font-medium text-gray-800 hover:text-black hover:underline cursor-pointer font-sans"
           >
-            View All
+            {t('view_all')}
           </button>
         </div>
 
@@ -220,19 +221,19 @@ export default function AdminDashboard() {
             <thead>
               <tr className="border-b border-[#e5e7eb] bg-transparent">
                 <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                  ID
+                  {t('id')}
                 </th>
                 <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                  TIMESTAMP
+                  {t('timestamp')}
                 </th>
                 <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                  ACTION
+                  {t('action')}
                 </th>
                 <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                  DESCRIPTION
+                  {t('description')}
                 </th>
                 <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans text-center">
-                  IP ADDRESS
+                  {t('ip_address')}
                 </th>
               </tr>
             </thead>

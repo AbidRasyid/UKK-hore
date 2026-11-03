@@ -4,6 +4,7 @@ import logoutIcon from '../assets/logoutIcon.svg';
 import { getFilteredMenuItems } from '../config/sidebarConfig';
 import { useOutletContext } from 'react-router-dom';
 import { purgeBrowserStorageCredentials } from '../utils/cookies';
+import { useLanguage } from '../hooks/useLanguage';
 
 /**
  * Sidebar navigation component matching the Aside - SideNavBar design.
@@ -18,6 +19,7 @@ export default function Sidebar({ terminalId = 'Terminal #042', onLogout }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useOutletContext();
+  const { t, toggleLanguage, lang } = useLanguage();
 
   // Determine user role (passed as prop or retrieved from cookies)
   const currentRole = (user?.role || undefined)?.toLowerCase().trim();
@@ -40,7 +42,7 @@ export default function Sidebar({ terminalId = 'Terminal #042', onLogout }) {
 
   return (
     <aside
-      aria-label="Sidebar Navigation"
+      aria-label={t('sidebar_navigation')}
       className="w-64 min-w-[16rem] h-screen bg-white border-r border-[#e5e7eb] flex flex-col justify-between select-none shrink-0"
     >
       {/* Top Section: Header & Menu Navigation */}
@@ -50,19 +52,22 @@ export default function Sidebar({ terminalId = 'Terminal #042', onLogout }) {
           <div className="w-8 h-8 shrink-0 flex items-center justify-center">
             <img
               src={iconLogo}
-              alt="E-Teller Auth Logo"
+              alt={t('e_teller_auth_logo')}
               className="w-8 h-8 object-contain"
             />
           </div>
           <div className="flex flex-col min-w-0">
             <h1 className="text-base font-bold text-gray-900 leading-tight truncate">
-              E-Teller Auth
+              {t('e_teller_auth')}
             </h1>
             <span className="text-xs text-gray-500 font-normal leading-tight mt-0.5 truncate">
               {terminalId}
             </span>
           </div>
         </div>
+        <button onClick={toggleLanguage}>
+        {lang === 'en' ? t('switch_to_indonesian') : t('switch_to_english')}
+        </button>
 
         {/* Navigation List */}
         <nav className="flex-1 py-1 overflow-y-auto">
@@ -86,12 +91,12 @@ export default function Sidebar({ terminalId = 'Terminal #042', onLogout }) {
                   >
                     <img
                       src={item.icon}
-                      alt={`${item.title} icon`}
+                      alt={`${t(item.titleKey)} icon`}
                       className={`w-5 h-5 object-contain transition-all shrink-0 ${
                         isCurrentRouteActive ? 'brightness-0' : 'opacity-80'
                       }`}
                     />
-                    <span className="truncate">{item.title}</span>
+                    <span className="truncate">{t(item.titleKey)}</span>
                   </NavLink>
                 </li>
               );
@@ -109,10 +114,10 @@ export default function Sidebar({ terminalId = 'Terminal #042', onLogout }) {
         >
           <img
             src={logoutIcon}
-            alt="Logout icon"
+            alt={`${t('logout')} icon`}
             className="w-5 h-5 object-contain opacity-80 hover:opacity-100 shrink-0"
           />
-          <span>Logout</span>
+          <span>{t('logout')}</span>
         </button>
       </div>
     </aside>

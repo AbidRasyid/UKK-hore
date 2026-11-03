@@ -8,6 +8,7 @@ import {
   Info 
 } from 'lucide-react';
 import api from '../../api/axios';
+import { useLanguage } from '../../hooks/useLanguage';
 
 const CashDrawerIcon = ({ className = "w-5 h-5 text-gray-900" }) => (
   <svg
@@ -26,6 +27,7 @@ const CashDrawerIcon = ({ className = "w-5 h-5 text-gray-900" }) => (
 export default function TellerDashboard() {
   const navigate = useNavigate();
   const user = useOutletContext();
+  const { t } = useLanguage();
   const [quickLookupId, setQuickLookupId] = useState('');
   const [lookupResult, setLookupResult] = useState(null);
   const [isLookingUp, setIsLookingUp] = useState(false);
@@ -81,14 +83,14 @@ export default function TellerDashboard() {
           : [];
 
       if (customers.length === 0) {
-        setLookupError('No customer account found.');
+        setLookupError(t('no_customer_found'));
         return;
       }
 
       setLookupResult(customers[0]);
     } catch (error) {
       console.error('Failed to look up customer account', error);
-      setLookupError('Failed to look up customer account. Please try again.');
+      setLookupError(t('lookup_customer_error'));
     } finally {
       setIsLookingUp(false);
     }
@@ -100,13 +102,13 @@ export default function TellerDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900 font-sans">
-            Overview
+            {t('overview')}
           </h1>
           <p className="mt-1 text-sm text-gray-500 font-sans">
-            Session started: {sessionStartTime}
+            {t('session_started')} {sessionStartTime}
             {user?.fullname && (
               <span className="ml-2 text-gray-400">
-                • Logged in as <span className="text-gray-700 font-medium">{user.fullname}</span>
+                • {t('logged_in_as')} <span className="text-gray-700 font-medium">{user.fullname}</span>
               </span>
             )}
           </p>
@@ -119,7 +121,7 @@ export default function TellerDashboard() {
         <div className="bg-white border border-[#e5e7eb] rounded-lg p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between min-h-32">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              TODAY'S TRANSACTIONS
+              {t('todays_transactions')}
             </span>
             <Receipt className="w-5 h-5 text-gray-700 stroke-[1.8]" />
           </div>
@@ -134,7 +136,7 @@ export default function TellerDashboard() {
         <div className="bg-white border border-[#e5e7eb] rounded-lg p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between min-h-32">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              TOTAL DEPOSITS
+              {t('total_deposits')}
             </span>
             <ArrowDown className="w-5 h-5 text-emerald-600 stroke-[2.5]" />
           </div>
@@ -149,7 +151,7 @@ export default function TellerDashboard() {
         <div className="bg-white border border-[#e5e7eb] rounded-lg p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between min-h-32">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              TOTAL WITHDRAWALS
+              {t('total_withdrawals')}
             </span>
             <ArrowUp className="w-5 h-5 text-[#b45309] stroke-[2.5]" />
           </div>
@@ -164,7 +166,7 @@ export default function TellerDashboard() {
         <div className="bg-white border border-[#e5e7eb] rounded-lg p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between min-h-32">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              DRAWER BALANCE
+              {t('drawer_balance')}
             </span>
             <CashDrawerIcon className="w-5 h-5 text-gray-900" />
           </div>
@@ -183,14 +185,14 @@ export default function TellerDashboard() {
           {/* Header */}
           <div className="px-6 py-4 flex items-center justify-between border-b border-[#e5e7eb]">
             <h2 className="text-base font-semibold text-gray-900 font-sans">
-              Recent Transactions
+              {t('recent_transactions')}
             </h2>
             <button
               type="button"
               onClick={() => navigate('/reports')}
               className="text-xs font-medium text-gray-700 hover:text-black hover:underline cursor-pointer font-sans"
             >
-              View All
+              {t('view_all')}
             </button>
           </div>
 
@@ -200,19 +202,19 @@ export default function TellerDashboard() {
               <thead>
                 <tr className="border-b border-[#e5e7eb] bg-transparent">
                   <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    TIME
+                    {t('time')}
                   </th>
                   <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    TYPE
+                    {t('type')}
                   </th>
                   <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    ACCOUNT
+                    {t('account')}
                   </th>
                   <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    AMOUNT
+                    {t('amount')}
                   </th>
                   <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans text-center">
-                    STATUS
+                    {t('status')}
                   </th>
                 </tr>
               </thead>
@@ -226,7 +228,7 @@ export default function TellerDashboard() {
 
                     {/* TYPE */}
                     <td className="py-4 px-6 text-sm font-medium text-gray-900 whitespace-nowrap font-sans">
-                      {tx.type}
+                      {t(tx.type.toLowerCase()) || tx.type}
                     </td>
 
                     {/* ACCOUNT */}
@@ -242,7 +244,7 @@ export default function TellerDashboard() {
                     {/* STATUS */}
                     <td className="py-4 px-6 whitespace-nowrap text-center">
                       <span className="inline-block text-center text-xs font-medium px-3 py-1 rounded bg-[#15803d] text-white font-sans">
-                        {tx.status}
+                        {t(tx.status.toLowerCase()) || tx.status}
                       </span>
                     </td>
                   </tr>
@@ -257,14 +259,14 @@ export default function TellerDashboard() {
           {/* Quick Lookup Card */}
           <div className="bg-white border border-[#e5e7eb] rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
             <h2 className="text-base font-bold text-gray-900 font-sans">
-              Quick Lookup
+              {t('quick_lookup')}
             </h2>
             <form onSubmit={handleLookupSubmit} className="mt-3">
               <label
                 htmlFor="account-lookup-input"
                 className="block text-xs font-normal text-gray-500 mb-1.5 font-sans"
               >
-                Account Number or ID
+                {t('account_number_or_id')}
               </label>
               <div className="relative flex items-center border border-[#d1d5db] rounded-md overflow-hidden bg-white focus-within:border-gray-500 transition-colors">
                 <input
@@ -277,7 +279,7 @@ export default function TellerDashboard() {
                 />
                 <button
                   type="submit"
-                  aria-label="Search Account"
+                  aria-label={t('search_account')}
                   disabled={isLookingUp}
                   className="h-10 px-3.5 border-l border-[#e5e7eb] text-gray-600 hover:text-black hover:bg-gray-50 transition cursor-pointer flex items-center justify-center shrink-0"
                 >
@@ -285,7 +287,7 @@ export default function TellerDashboard() {
                 </button>
               </div>
               {isLookingUp && (
-                <p className="mt-2 text-xs text-gray-500 font-sans">Looking up customer...</p>
+                <p className="mt-2 text-xs text-gray-500 font-sans">{t('looking_up_customer')}</p>
               )}
               {lookupError && (
                 <p className="mt-2 text-xs text-red-600 font-sans">{lookupError}</p>
@@ -293,23 +295,23 @@ export default function TellerDashboard() {
               {lookupResult && (
                 <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-xs font-sans">
                   <div>
-                    <dt className="text-gray-500">Account Number</dt>
+                    <dt className="text-gray-500">{t('account_number')}</dt>
                     <dd className="mt-1 font-mono text-gray-900">{lookupResult.account_number || '-'}</dd>
                   </div>
                   <div>
-                    <dt className="text-gray-500">Student ID</dt>
+                    <dt className="text-gray-500">{t('student_id')}</dt>
                     <dd className="mt-1 text-gray-900">{lookupResult.student_id || '-'}</dd>
                   </div>
                   <div>
-                    <dt className="text-gray-500">Student Name</dt>
+                    <dt className="text-gray-500">{t('student_name')}</dt>
                     <dd className="mt-1 text-gray-900">{lookupResult.student_name || '-'}</dd>
                   </div>
                   <div>
-                    <dt className="text-gray-500">Class</dt>
+                    <dt className="text-gray-500">{t('class')}</dt>
                     <dd className="mt-1 text-gray-900">{lookupResult.student_class || '-'}</dd>
                   </div>
                   <div className="col-span-2">
-                    <dt className="text-gray-500">Balance</dt>
+                    <dt className="text-gray-500">{t('balance')}</dt>
                     <dd className="mt-1 font-mono font-semibold text-gray-900">{lookupResult.balance ?? '-'}</dd>
                   </div>
                 </dl>
@@ -320,16 +322,16 @@ export default function TellerDashboard() {
           {/* System Alerts Card */}
           <div className="bg-white border border-[#e5e7eb] rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-64">
             <h2 className="text-base font-bold text-gray-900 font-sans">
-              System Alerts
+              {t('system_alerts')}
             </h2>
             <div className="mt-4 flex items-start gap-3">
               <Info className="w-5 h-5 text-gray-500 stroke-[1.8] shrink-0 mt-0.5" />
               <div>
                 <h3 className="text-sm font-medium text-gray-900 font-sans leading-tight">
-                  System update scheduled
+                  {t('system_update_scheduled')}
                 </h3>
                 <p className="text-xs text-gray-500 mt-1 font-sans">
-                  Maintenance at 23:00 EST.
+                  {t('system_update_desc')}
                 </p>
               </div>
             </div>

@@ -1,7 +1,10 @@
-export default function notFound() {
+import { useLanguage } from "../../hooks/useLanguage";
+
+export default function NotFound() {
+    const { t } = useLanguage();
     return(
         <>
-        <h1>Not Found</h1>
+        <h1>{t("not_found")}</h1>
         </>
     )
 }

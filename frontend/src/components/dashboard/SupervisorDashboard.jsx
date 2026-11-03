@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
 import api from '../../api/axios';
+import { useLanguage } from '../../hooks/useLanguage';
 
 /**
  * Custom Pending Report Clipboard Icon matching supervisor_dashboard.png
@@ -25,6 +26,7 @@ const PendingReportIcon = ({ className = "w-6 h-6 text-[#ca8a04]" }) => (
 
 export default function SupervisorDashboard() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [pendingReportsCount, setPendingReportsCount] = useState(14);
   const [syncTime] = useState(() => {
     return '10:42:05 AM';
@@ -122,15 +124,15 @@ export default function SupervisorDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900 font-sans">
-            Supervisor Dashboard
+            {t('supervisor_dashboard')}
           </h1>
           <p className="mt-1 text-sm text-gray-500 font-sans">
-            Real-time overview of branch operations.
+            {t('realtime_branch_overview')}
           </p>
         </div>
         <div>
           <span className="font-mono text-sm text-gray-700 font-medium">
-            Last sync: {syncTime}
+            {t('last_sync')} {syncTime}
           </span>
         </div>
       </div>
@@ -141,7 +143,7 @@ export default function SupervisorDashboard() {
         <div className="bg-white border border-[#e5e7eb] rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-36 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              PENDING REPORTS
+              {t('pending_reports')}
             </span>
             <PendingReportIcon className="w-5 h-5 text-[#ca8a04]" />
           </div>
@@ -156,7 +158,7 @@ export default function SupervisorDashboard() {
         <div className="bg-white border border-[#e5e7eb] rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-36 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              TOTAL DAILY VOL.
+              {t('total_daily_vol')}
             </span>
             <TrendingUp className="w-5 h-5 text-emerald-500 stroke-[2.5]" />
           </div>
@@ -175,14 +177,14 @@ export default function SupervisorDashboard() {
           {/* Header */}
           <div className="px-6 py-4 flex items-center justify-between border-b border-[#e5e7eb]">
             <h2 className="text-sm font-bold tracking-wider text-gray-900 uppercase font-sans">
-              TELLERS OVERVIEW
+              {t('tellers_overview')}
             </h2>
             <button
               type="button"
               onClick={() => navigate('/reports')}
               className="text-xs font-medium text-gray-700 hover:text-black hover:underline cursor-pointer font-sans"
             >
-              View All
+              {t('view_all')}
             </button>
           </div>
 
@@ -192,16 +194,16 @@ export default function SupervisorDashboard() {
               <thead>
                 <tr className="border-b border-[#e5e7eb] bg-transparent">
                   <th className="py-3.5 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    TELLER NAME
+                    {t('teller_name')}
                   </th>
                   <th className="py-3.5 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    STATUS
+                    {t('status')}
                   </th>
                   <th className="py-3.5 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    CASH POSITION
+                    {t('cash_position')}
                   </th>
                   <th className="py-3.5 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans text-right">
-                    PENDING APPROVALS
+                    {t('pending_approvals')}
                   </th>
                 </tr>
               </thead>
@@ -226,7 +228,7 @@ export default function SupervisorDashboard() {
                         <span
                           className={`inline-block text-xs font-medium px-2.5 py-0.5 rounded ${statusBadgeClass} font-sans`}
                         >
-                          {teller.status}
+                          {t(teller.statusType) || teller.status}
                         </span>
                       </td>
 
@@ -259,7 +261,7 @@ export default function SupervisorDashboard() {
           <div className="flex items-center gap-1.5 pb-2 text-red-700">
             <span className="text-base font-black leading-none">!</span>
             <h2 className="text-sm font-bold tracking-wider uppercase font-sans">
-              ATTENTION REQUIRED
+              {t('attention_required')}
             </h2>
           </div>
 
@@ -278,7 +280,7 @@ export default function SupervisorDashboard() {
                   <span
                     className={`text-[11px] font-medium px-2 py-0.5 rounded ${item.badgeClass} font-sans`}
                   >
-                    {item.badge}
+                    {t(item.badge.toLowerCase()) || item.badge}
                   </span>
                 </div>
 
@@ -299,7 +301,7 @@ export default function SupervisorDashboard() {
                     onClick={() => navigate('/reports')}
                     className="bg-black hover:bg-neutral-800 text-white text-xs font-medium px-4 py-1.5 rounded transition cursor-pointer font-sans"
                   >
-                    Review
+                    {t('review')}
                   </button>
                 </div>
               </div>

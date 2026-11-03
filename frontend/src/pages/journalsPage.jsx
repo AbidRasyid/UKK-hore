@@ -4,11 +4,13 @@ import { useOutletContext } from "react-router-dom";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import api from "../api/axios";
 import { formatCurrency, formatDate } from "../utils/format";
+import { useLanguage } from "../hooks/useLanguage";
 
 const normalize = (value) => String(value ?? "").toLowerCase().trim();
 
 export default function JournalsPage() {
   const { user } = useOutletContext();
+  const { t } = useLanguage();
   const [journals, setJournals] = useState([]);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -29,7 +31,7 @@ export default function JournalsPage() {
       setJournals(data);
     } catch (error) {
       console.error("Failed to load accounting journals", error);
-      setErrorMessage("Accounting journals could not be loaded. Please try again.");
+      setErrorMessage(t("journals_load_error"));
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +58,7 @@ export default function JournalsPage() {
       } catch (error) {
         console.error("Failed to load accounting journals", error);
         if (isMounted) {
-          setErrorMessage("Accounting journals could not be loaded. Please try again.");
+          setErrorMessage(t("journals_load_error"));
         }
       } finally {
         if (isMounted) {
@@ -70,7 +72,7 @@ export default function JournalsPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [t]);
 
   const filteredJournals = useMemo(() => {
     const query = normalize(search);
@@ -96,20 +98,20 @@ export default function JournalsPage() {
         user={user}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search transaction, account, or position..."
+        searchPlaceholder={t("search_transaction")}
       />
 
       <div className="mx-auto max-w-[1600px] space-y-6 p-6 lg:p-8">
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-              Accounting
+              {t("accounting")}
             </p>
             <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900">
-              Journals
+              {t("journals")}
             </h1>
             <p className="mt-1 text-sm text-gray-500">
-              Review transaction journal entries and account movements.
+              {t("journal_description")}
             </p>
           </div>
           <button
@@ -119,15 +121,15 @@ export default function JournalsPage() {
             className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#d1d5db] bg-white px-4 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            Refresh
+            {t("refresh")}
           </button>
         </header>
 
         <section className="overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           <div className="border-b border-[#e5e7eb] px-6 py-5 lg:px-8">
-            <h2 className="text-lg font-semibold text-gray-900">Journal history</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t("journal_history")}</h2>
             <p className="mt-1 text-sm text-gray-500">
-              {filteredJournals.length} entr{filteredJournals.length === 1 ? "y" : "ies"} found
+              {filteredJournals.length} {filteredJournals.length === 1 ? t("entry_found") : t("entries_found")}
             </p>
           </div>
 
@@ -141,7 +143,7 @@ export default function JournalsPage() {
               <table className="min-w-225 w-full">
                 <thead>
                   <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa]">
-                    {["No", "Journal ID", "Transaction ID", "Account code", "Position", "Amount", "Date"].map(
+                    {[t("no"), t("journal_id"), t("transaction_id"), t("account_code"), t("position"), t("amount"), t("date")].map(
                       (heading) => (
                         <th
                           key={heading}
@@ -157,13 +159,13 @@ export default function JournalsPage() {
                   {isLoading ? (
                     <tr>
                       <td colSpan="7" className="px-6 py-10 text-center text-sm text-gray-500">
-                        Loading accounting journals...
+                        {t("loading")}
                       </td>
                     </tr>
                   ) : filteredJournals.length === 0 ? (
                     <tr>
                       <td colSpan="7" className="px-6 py-10 text-center text-sm text-gray-500">
-                        No journal entries found.
+                        {t("no_journals")}
                       </td>
                     </tr>
                   ) : (
@@ -176,7 +178,7 @@ export default function JournalsPage() {
                           {journal.account_code}
                         </td>
                         <td className="px-6 py-4 text-sm capitalize text-gray-900">
-                          {journal.position}
+                          {t(journal.position?.toLowerCase()) || journal.position}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
                           {formatCurrency(journal.amount)}

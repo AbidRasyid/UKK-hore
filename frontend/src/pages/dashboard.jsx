@@ -4,9 +4,11 @@ import AdminDashboard from '../components/dashboard/AdminDashboard';
 import TellerDashboard from '../components/dashboard/TellerDashboard';
 import SupervisorDashboard from '../components/dashboard/SupervisorDashboard';
 import { useOutletContext } from 'react-router-dom';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function Dashboard() {
   const { user } = useOutletContext();
+  const { t } = useLanguage();
 
   const activeRoleView = (user?.role || '').toLowerCase().trim();
 
@@ -23,7 +25,7 @@ export default function Dashboard() {
         role={activeRoleView}
         searchValue={headerSearch}
         onSearchChange={setHeaderSearch}
-        searchPlaceholder={isTeller ? 'Search customer ID...' : 'Search ID, Name...'}
+        searchPlaceholder={isTeller ? t('search_customer') : t('search_all')}
         showSearch={!isSupervisor}
         searchOnLeft={isTeller}
         user={user}

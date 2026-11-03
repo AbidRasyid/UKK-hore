@@ -4,6 +4,7 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import api from "../../api/axios";
 import { formatCurrency, formatDate } from "../../utils/format";
+import { useLanguage } from "../../hooks/useLanguage";
 
 const statusStyles = {
   approved: "bg-emerald-50 text-emerald-700",
@@ -17,6 +18,7 @@ const getUserId = (user) => user?.id ?? user?.user_id;
 
 export default function TellerReportPage() {
   const { user } = useOutletContext();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
   const [search, setSearch] = useState("");
@@ -26,7 +28,7 @@ export default function TellerReportPage() {
   const fetchReports = async () => {
     const userId = getUserId(user);
     if (!userId) {
-      setErrorMessage("Your user session could not be identified. Please sign in again.");
+      setErrorMessage(t("user_session_unidentified"));
       setIsLoading(false);
       return;
     }
@@ -41,7 +43,7 @@ export default function TellerReportPage() {
     } catch (error) {
       console.error("Failed to load teller daily reports", error);
       setErrorMessage(
-        error.response?.data?.message || "Daily reports could not be loaded. Please try again."
+        error.response?.data?.message || t("daily_reports_load_error")
       );
     } finally {
       setIsLoading(false);
@@ -55,7 +57,7 @@ export default function TellerReportPage() {
       const userId = getUserId(user);
       if (!userId) {
         if (isMounted) {
-          setErrorMessage("Your user session could not be identified. Please sign in again.");
+          setErrorMessage(t("user_session_unidentified"));
           setIsLoading(false);
         }
         return;
@@ -73,7 +75,7 @@ export default function TellerReportPage() {
         if (isMounted) {
           setErrorMessage(
             error.response?.data?.message ||
-              "Daily reports could not be loaded. Please try again."
+              t("daily_reports_load_error")
           );
         }
       } finally {
@@ -85,7 +87,7 @@ export default function TellerReportPage() {
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [user, t]);
 
   const filteredReports = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -104,25 +106,25 @@ export default function TellerReportPage() {
         user={user}
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search report date or status..."
+        searchPlaceholder={t("search_report")}
         searchOnLeft
       />
       <div className="p-6 lg:p-8">
         <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Daily reports</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("daily_reports")}</h1>
             <p className="mt-2 text-sm text-gray-600">
-              Create a report and track supervisor approval.
+              {t("teller_report_desc")}
             </p>
           </div>
           <div className="flex gap-3">
             <button type="button" onClick={fetchReports} disabled={isLoading} className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-500 disabled:opacity-60">
               <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-              Refresh
+              {t("refresh")}
             </button>
             <button type="button" onClick={() => navigate("/reports/create")} className="inline-flex items-center gap-2 rounded-md bg-black px-5 py-2 text-sm text-white hover:bg-gray-800">
               <Plus className="h-4 w-4" />
-              Create report
+              {t("create_report")}
             </button>
           </div>
         </div>
@@ -138,16 +140,16 @@ export default function TellerReportPage() {
           <table className="min-w-full rounded-lg border border-gray-200 bg-white">
             <thead>
               <tr className="bg-gray-100">
-                {["No", "Report date", "Deposits", "Withdrawals", "System balance", "Physical cash", "Status", "Actions"].map((heading) => (
+                {[t("no"), t("report_date"), t("deposits"), t("withdrawals"), t("system_balance"), t("physical_balance"), t("status"), t("actions")].map((heading) => (
                   <th key={heading} className="px-6 py-3 text-left text-sm font-medium text-gray-700">{heading}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan="8" className="px-6 py-8 text-center text-sm text-gray-500">Loading...</td></tr>
+                <tr><td colSpan="8" className="px-6 py-8 text-center text-sm text-gray-500">{t("loading")}</td></tr>
               ) : filteredReports.length === 0 ? (
-                <tr><td colSpan="8" className="px-6 py-8 text-center text-sm text-gray-500">No daily reports found.</td></tr>
+                <tr><td colSpan="8" className="px-6 py-8 text-center text-sm text-gray-500">{t("no_daily_reports")}</td></tr>
               ) : (
                 filteredReports.map((report, index) => {
                   const status = getStatus(report);
@@ -160,10 +162,10 @@ export default function TellerReportPage() {
                       <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(report.system_balance)}</td>
                       <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(report.physical_balance)}</td>
                       <td className="px-6 py-4 text-sm">
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusStyles[status] || statusStyles.pending}`}>{status}</span>
+                        <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusStyles[status] || statusStyles.pending}`}>{t(status) || status}</span>
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        <button type="button" onClick={() => navigate(`/report/${report.id}`)} aria-label={`View report ${report.id}`}>
+                        <button type="button" onClick={() => navigate(`/report/${report.id}`)} aria-label={`${t("view_report")} ${report.id}`}>
                           <Eye className="h-4 w-4" />
                         </button>
                       </td>

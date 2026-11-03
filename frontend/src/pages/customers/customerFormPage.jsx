@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Check, KeyRound, LockKeyhole, UserRound } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../../api/axios";
+import { useLanguage } from "../../hooks/useLanguage";
 
 export default function CustomerFormPage() {
   const { customer_id } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const isEdit = Boolean(customer_id);
 
   const [isLoading, setIsLoading] = useState(isEdit);
@@ -58,17 +60,17 @@ export default function CustomerFormPage() {
 
 
     if (!payload.student_name || !payload.student_id || !payload.student_class) {
-      alert("Name, student ID, and class are required.");
+      alert(t("err_name_id_class_required"));
       return;
     }
 
     if (!isEdit && !payload.password) {
-      alert("Password is required.");
+      alert(t("err_password_required"));
       return;
     }
 
     if (payload.pin && !/^\d{6}$/.test(payload.pin)) {
-      alert("PIN must contain exactly 6 numbers.");
+      alert(t("err_pin_must_be_6"));
       return;
     }
 
@@ -97,7 +99,7 @@ export default function CustomerFormPage() {
       } else if (error.response?.data?.message) {
         alert(error.response.data.message);
       } else {
-        alert("Customer account could not be saved.");
+        alert(t("customer_account_save_error"));
       }
     } finally {
       setIsSubmitting(false);
@@ -123,7 +125,7 @@ export default function CustomerFormPage() {
           className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to accounts
+          {t("back_to_accounts")}
         </Link>
       </div>
 
@@ -131,15 +133,15 @@ export default function CustomerFormPage() {
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-              Customer management
+              {t("customer_management")}
             </p>
             <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900">
-              {isEdit ? "Edit customer" : "Add customer"}
+              {isEdit ? t("edit_customer") : t("add_customer")}
             </h1>
             <p className="mt-1 text-sm text-gray-500">
               {isEdit
-                ? "Update customer details and account status."
-                : "Create a new customer account."}
+                ? t("customer_form_edit_desc")
+                : t("customer_form_create_desc")}
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -153,19 +155,19 @@ export default function CustomerFormPage() {
               <div className="sm:col-span-2">
                 <div className="flex items-center gap-2">
                   <UserRound className="h-4 w-4 text-gray-500" />
-                  <h3 className="text-sm font-semibold text-gray-900">Profile details</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">{t("profile_details")}</h3>
                 </div>
               </div>
 
               <label className="block">
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Full name
+                  {t("full_name")}
                 </span>
                 <input
                   type="text"
                   value={studentName}
                   onChange={(event) => setStudentName(event.target.value)}
-                  placeholder="Enter full name"
+                  placeholder={t("enter_full_name")}
                   required
                   className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                 />
@@ -173,13 +175,13 @@ export default function CustomerFormPage() {
 
               <label className="block">
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Student ID
+                  {t("student_id")}
                 </span>
                 <input
                   type="text"
                   value={studentId}
                   onChange={(event) => setStudentId(event.target.value)}
-                  placeholder="Enter student ID"
+                  placeholder={t("enter_student_id")}
                   required
                   className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                 />
@@ -187,13 +189,13 @@ export default function CustomerFormPage() {
 
               <label className="block">
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Class
+                  {t("class")}
                 </span>
                 <input
                   type="text"
                   value={studentClass}
                   onChange={(event) => setStudentClass(event.target.value)}
-                  placeholder="Enter class"
+                  placeholder={t("enter_class")}
                   required
                   className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                 />
@@ -204,23 +206,23 @@ export default function CustomerFormPage() {
               <div className="sm:col-span-2">
                 <div className="flex items-center gap-2">
                   <KeyRound className="h-4 w-4 text-gray-500" />
-                  <h3 className="text-sm font-semibold text-gray-900">Security details</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">{t("security_details")}</h3>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
-                  {isEdit ? "Leave credentials blank to keep the current values." : "Set the credentials used by the customer."}
+                  {isEdit ? t("security_details_edit_desc") : t("security_details_create_desc")}
                 </p>
               </div>
 
               <label className="block">
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Password
+                  {t("password")}
                 </span>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    placeholder={isEdit ? "Leave blank to keep current" : "Enter password"}
+                    placeholder={isEdit ? t("leave_blank_keep_current") : t("enter_password")}
                     required={!isEdit}
                     className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 pr-20 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                   />
@@ -229,14 +231,14 @@ export default function CustomerFormPage() {
                     onClick={() => setShowPassword((current) => !current)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-500 hover:text-gray-900"
                   >
-                    {showPassword ? "Hide" : "Show"}
+                    {showPassword ? t("hide") : t("show")}
                   </button>
                 </div>
               </label>
 
               <label className="block">
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  PIN
+                  {t("pin")}
                 </span>
                 <div className="relative">
                   <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -248,7 +250,7 @@ export default function CustomerFormPage() {
                     pattern="\d{6}"
                     value={pin}
                     onChange={(event) => setPin(event.target.value)}
-                    placeholder={isEdit ? "Leave blank to keep current" : "6-digit PIN"}
+                    placeholder={isEdit ? t("leave_blank_keep_current") : t("six_digit_pin")}
                     required={!isEdit}
                     className="h-11 w-full rounded-md border border-[#d1d5db] bg-white pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                   />
@@ -257,15 +259,15 @@ export default function CustomerFormPage() {
 
               <label className="block">
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Account status
+                  {t("account_status")}
                 </span>
                 <select
                   value={status}
                   onChange={(event) => setStatus(event.target.value)}
                   className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm capitalize text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                 >
-                  <option value="active">Active</option>
-                  <option value="blocked">Blocked</option>
+                  <option value="active">{t("active")}</option>
+                  <option value="blocked">{t("blocked")}</option>
                 </select>
               </label>
             </div>
@@ -276,7 +278,7 @@ export default function CustomerFormPage() {
                   to="/accounts"
                   className="inline-flex h-10 items-center justify-center rounded-md border border-[#d1d5db] bg-white px-4 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:text-gray-900"
                 >
-                  Cancel
+                  {t("cancel")}
                 </Link>
                 <button
                   type="submit"
@@ -284,7 +286,7 @@ export default function CustomerFormPage() {
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-black px-4 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-60"
                 >
                   <Check className="h-4 w-4" />
-                  {isSubmitting ? "Saving..." : isEdit ? "Save changes" : "Create customer"}
+                  {isSubmitting ? t("saving") : isEdit ? t("save_changes") : t("create_customer")}
                 </button>
               </div>
             </div>

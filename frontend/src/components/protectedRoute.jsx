@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Navigate, Outlet } from "react-router-dom";
 import api from '../api/axios';
+import { useLanguage } from '../hooks/useLanguage';
 
 const ProtectedRoute = ({ allowedRoles }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Menembak ke rute bebas role untuk mengambil profile user yang sedang memegang cookie
@@ -20,7 +22,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
   }, []); // Menggunakan [] agar hanya dieksekusi 1 kali saat halaman dibuka
   
   if (loading) {
-    return <div>Memverifikasi otentikasi aman...</div>;
+    return <div>{t('loading')}</div>;
   }
 
   // Ambil data role asli dari database (misal kolom 'role' di tabel users Anda)

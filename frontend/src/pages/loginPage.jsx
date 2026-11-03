@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
 import api from "../api/axios.js"; 
 import Icon from "../assets/Icon.svg";
+import { useLanguage } from "../hooks/useLanguage";
 
 
 const LoginPage = () => {
@@ -13,6 +14,7 @@ const LoginPage = () => {
   const [infoMsg, setInfoMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
 // Di dalam LoginPage.jsx Anda:
 const handleLogin = async (e) => {
@@ -32,7 +34,7 @@ const handleLogin = async (e) => {
     navigate("/");
   // eslint-disable-next-line no-unused-vars
   } catch (e) {
-    setErrorMsg("Invalid username or password");
+    setErrorMsg(t("invalid_credentials"));
   } finally {
     setIsLoading(false);
   }
@@ -41,7 +43,7 @@ const handleLogin = async (e) => {
 
   const handleForgotPassword = (e) => {
     e.preventDefault();
-    setInfoMsg("Please contact your IT administrator or branch manager to reset your PIN.");
+    setInfoMsg(t("login_help"));
   };
 
   return (
@@ -49,13 +51,13 @@ const handleLogin = async (e) => {
       {/* Top Branding Section */}
       <div className="flex flex-col items-center mb-7">
         <div className="w-13 h-13 bg-black rounded-xl flex items-center justify-center shadow-sm">
-          <img src={Icon} alt="Icon" />
+          <img src={Icon} alt={t("app_logo")} />
         </div>
         <h1 className="mt-4 text-[22px] font-bold tracking-tight text-neutral-900">
-          E-Teller System
+          {t("e_teller_system")}
         </h1>
         <p className="mt-1 text-sm text-neutral-500 font-normal">
-          Authorized Personnel Only
+          {t("authorized_personnel_only")}
         </p>
       </div>
 
@@ -80,7 +82,7 @@ const handleLogin = async (e) => {
               htmlFor="teller-id"
               className="block text-sm font-normal text-neutral-700 mb-1.5"
             >
-              Username
+              {t("username")}
             </label>
             <div className="relative flex items-center">
               <span className="absolute left-3 text-neutral-400 pointer-events-none flex items-center">
@@ -91,7 +93,7 @@ const handleLogin = async (e) => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your ID"
+                placeholder={t("enter_id")}
                 required
                 disabled={isLoading}
                 className="w-full h-11 pl-9 pr-3 bg-white border border-neutral-200 rounded-md text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 transition-colors disabled:opacity-60 disabled:bg-neutral-50"
@@ -106,14 +108,14 @@ const handleLogin = async (e) => {
                 htmlFor="access-pin"
                 className="text-sm font-normal text-neutral-700"
               >
-                Password
+                {t("password")}
               </label>
               <button
                 type="button"
                 onClick={handleForgotPassword}
                 className="text-sm font-normal text-neutral-900 hover:text-black cursor-pointer focus:outline-none"
               >
-                Forgot PIN?
+                {t("forgot_pin")}
               </button>
             </div>
             <div className="relative flex items-center">
@@ -164,12 +166,12 @@ const handleLogin = async (e) => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  Authenticating...
+                  {t("authenticating")}
                 </span>
               ) : (
                 <>
                   <LogIn className="w-4 h-4 stroke-[2.2]" />
-                  <span>Secure Login</span>
+                  <span>{t("login")}</span>
                 </>
               )}
             </button>
@@ -180,7 +182,7 @@ const handleLogin = async (e) => {
       {/* Security Footer */}
       <div className="mt-5 flex items-center justify-center gap-1.5 text-xs text-neutral-500 font-normal">
         <Lock className="w-3.5 h-3.5 text-neutral-500"/>
-        <span>End-to-End Encrypted Terminal</span>
+        <span>{t("end_to_end_encrypted")}</span>
       </div>
     </div>
   );
