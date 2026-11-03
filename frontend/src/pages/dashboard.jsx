@@ -1,14 +1,15 @@
 import { useState } from 'react';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import AdminDashboard from '../components/dashboard/AdminDashboard';
 import TellerDashboard from '../components/dashboard/TellerDashboard';
 import SupervisorDashboard from '../components/dashboard/SupervisorDashboard';
-import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
 
 export default function Dashboard() {
   const { user } = useOutletContext();
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   const activeRoleView = (user?.role || '').toLowerCase().trim();
 
@@ -18,6 +19,15 @@ export default function Dashboard() {
   const isSupervisor = activeRoleView === 'supervisor';
   const isAdmin = activeRoleView === 'administrator' || activeRoleView === 'admin';
 
+  const handleSearchSubmit = (value) => {
+    if (isTeller) {
+      const query = (value !== undefined ? value : headerSearch).trim();
+      navigate(query ? `/accounts?s=${encodeURIComponent(query)}` : '/accounts', {
+        state: { search: query },
+      });
+    }
+  };
+
   return (
     <div className="min-h-full flex flex-col bg-transparent font-sans">
       {/* Top Header Bar */}
@@ -25,8 +35,9 @@ export default function Dashboard() {
         role={activeRoleView}
         searchValue={headerSearch}
         onSearchChange={setHeaderSearch}
+        onSearchSubmit={handleSearchSubmit}
         searchPlaceholder={isTeller ? t('search_customer') : t('search_all')}
-        showSearch={!isSupervisor}
+        showSearch={isTeller}
         searchOnLeft={isTeller}
         user={user}
       />

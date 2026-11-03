@@ -1,5 +1,5 @@
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import api from "../../api/axios";
 import UserRow from "../../components/users/userRow";
@@ -33,6 +33,15 @@ export default function UsersPage() {
   const activeRoleView = (user?.role || '').toLowerCase().trim();
 
   const [headerSearch, setHeaderSearch] = useState('');
+  const filteredUsers = useMemo(() => {
+    const query = headerSearch.trim().toLowerCase();
+    if (!query) return users;
+
+    return users.filter((item) =>
+      [item.id, item.fullname, item.username, item.role, item.status]
+        .some((value) => String(value ?? '').toLowerCase().includes(query))
+    );
+  }, [headerSearch, users]);
 
   const isTeller = activeRoleView === 'teller';
   return (
@@ -75,7 +84,7 @@ export default function UsersPage() {
                   </td>
                 </tr>
               ) : (
-                users.map((user, index) => {
+                filteredUsers.map((user, index) => {
                   return <UserRow key={user.id} user={user} index={index} onBlock={block}/>;
                 })
               )}

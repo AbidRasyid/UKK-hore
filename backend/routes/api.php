@@ -69,6 +69,7 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value . ','
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value . ',' . UserRole::TELLER->value . ',' . UserRole::SUPERVISOR->value])->group(function(){
     Route::get('/customers', [CustomerController::class, 'index']);
     Route::get('/customer/{customer_id?}', [CustomerController::class, 'show']);
+    Route::get('/daily-report/{id}', [DailyReportController::class, 'show']);
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->group(function(){
@@ -87,7 +88,6 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->gr
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::SUPERVISOR->value])->group(function(){
     Route::get('/daily-reports', [DailyReportController::class, 'index']);
-    Route::get('/daily-report/{id}', [DailyReportController::class, 'show']);
     Route::patch('/daily-report/{id}/approve', [DailyReportController::class, 'approve']);
 });
 

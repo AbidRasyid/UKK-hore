@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Download, FileSpreadsheet, Plus, X } from "lucide-react";
-import { useOutletContext } from "react-router-dom";
+import { useLocation, useOutletContext } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import CustomerRow from "../../components/accounts/accountRow";
@@ -21,8 +21,12 @@ const createEmptyCustomer = () => ({
 export default function CustomerPage() {
   const { user } = useOutletContext();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
-  const [headerSearch, setHeaderSearch] = useState("");
+  const [headerSearch, setHeaderSearch] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("s") || location.state?.search || "";
+  });
   const [isBulkFormOpen, setIsBulkFormOpen] = useState(false);
   const [customerRows, setCustomerRows] = useState([createEmptyCustomer()]);
   const fileInputRef = useRef(null);

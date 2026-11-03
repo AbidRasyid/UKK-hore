@@ -42,19 +42,15 @@ function App() {
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['supervisor', 'teller']}/>}>
+              <Route path="/report/:report_id" element={<ReportDetail />} />
               <Route path="/reports" element={<Reports />} />
             </Route>
             <Route element={<ProtectedRoute allowedRoles={['teller']}/>}>
               <Route path="/reports/create" element={<DailyReportFormPage />} />
             </Route>
 
-            <Route>
+            <Route element={<ProtectedRoute allowedRoles={['administrator', 'admin', 'teller']} />}>
               <Route path="/accounts" element={<AccountPage />} />
-
-            </Route>
-
-            <Route element={<ProtectedRoute allowedRoles={['supervisor']}/>}>
-              <Route path="/report/:report_id" element={<ReportDetail />} />
             </Route>
             
 

@@ -42,12 +42,18 @@ class TransactionController extends Controller
                 ], 403);
             }
             $data = Transaction::query()
+                ->with(['customer:id,account_number'])
                 ->where('user_id', $teller_id)
                 ->where(function ($query) {
                     $query->whereDate('transaction_date', now()->toDateString());
                 })
                 ->orderBy('transaction_date', 'desc')
-                ->get();
+                ->get()->map(function (Transaction $transaction) {
+                    $response = $transaction->toArray();
+                    $response['account_number'] = $transaction->customer?->account_number;
+                    unset($response['customer']);
+                    return $response;
+                });
 
             return response()->json([
                 'message' => 'data has been loaded successfully',
@@ -69,8 +75,6 @@ class TransactionController extends Controller
                 ->get()
                 ->map(function (Transaction $transaction) {
                     $response = $transaction->toArray();
-                    unset($response['user_id'], $response['customer_id']);
-                    unset($response['user'], $response['customer']);
                     $response['teller_name'] = $transaction->user?->fullname;
                     $response['customer_name'] = $transaction->customer?->student_name;
 

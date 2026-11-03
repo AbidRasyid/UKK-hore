@@ -1,11 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { 
   Receipt, 
   ArrowDown, 
   ArrowUp, 
-  Search, 
-  Info 
 } from 'lucide-react';
 import api from '../../api/axios';
 import { useLanguage } from '../../hooks/useLanguage';
@@ -26,75 +24,71 @@ const CashDrawerIcon = ({ className = "w-5 h-5 text-gray-900" }) => (
 
 export default function TellerDashboard() {
   const navigate = useNavigate();
-  const user = useOutletContext();
+  const { user } = useOutletContext();
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
   const { t } = useLanguage();
-  const [quickLookupId, setQuickLookupId] = useState('');
-  const [lookupResult, setLookupResult] = useState(null);
-  const [isLookingUp, setIsLookingUp] = useState(false);
-  const [lookupError, setLookupError] = useState('');
 
   // Personalized session started time
   const [sessionStartTime] = useState(() => {
     return '08:42 AM';
   });
 
-  
+  useEffect(() => {
+    let isMounted = true;
 
-  // Recent personalized teller transactions (placeholder)
-  const tellerTransactions = [
-    {
-      time: '10:42 AM',
-      type: 'Deposit',
-      account: '***4920',
-      amount: 'Rp. 200.000',
-      status: 'Completed',
-    },
-    {
-      time: '10:15 AM',
-      type: 'Withdrawal',
-      account: '***1102',
-      amount: 'Rp. 100.000',
-      status: 'Completed',
-    },
-    {
-      time: '09:30 AM',
-      type: 'Deposit',
-      account: '***4491',
-      amount: 'Rp. 100.000',
-      status: 'Completed',
-    },
-  ];
-
-  const handleLookupSubmit = async (e) => {
-    e.preventDefault();
-    const query = quickLookupId.trim();
-    if (!query) return;
-
-    setIsLookingUp(true);
-    setLookupError('');
-    setLookupResult(null);
-
-    try {
-      const response = await api.get(`/api/customer?s=${encodeURIComponent(query)}`);
-      const customers = Array.isArray(response.data?.data)
-        ? response.data.data
-        : response.data?.data
-          ? [response.data.data]
-          : [];
-
-      if (customers.length === 0) {
-        setLookupError(t('no_customer_found'));
+    const fetchTransactions = async () => {
+      if (!user?.id) {
+        setTransactions([]);
+        setLoading(false);
         return;
       }
 
-      setLookupResult(customers[0]);
-    } catch (error) {
-      console.error('Failed to look up customer account', error);
-      setLookupError(t('lookup_customer_error'));
-    } finally {
-      setIsLookingUp(false);
-    }
-  };
+      setLoading(true);
+      setErrorMessage("");
+
+      try {
+        const response = await api.get(`/api/transactions/${user.id}`);
+        const data = response.data?.data;
+
+        if (!Array.isArray(data)) {
+          throw new Error("Transactions response has an invalid format.");
+        }
+
+        if (isMounted) {
+          setTransactions(data);
+        }
+      } catch (error) {
+        console.error("Failed to load teller transactions", error);
+        if (isMounted) {
+          setErrorMessage(
+            error.response?.data?.message ||
+              "Transactions could not be loaded. Please try again."
+          );
+          setTransactions([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchTransactions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
+
+  const tellerTransactions = transactions.slice(0, 10).map((transaction) => ({
+    time: transaction.transaction_date,
+    type: transaction.transaction_type,
+    account: transaction.account_number,
+    amount: transaction.amount,
+    status: 'completed',
+  }));
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -127,7 +121,7 @@ export default function TellerDashboard() {
           </div>
           <div className="mt-4 text-right">
             <span className="text-3xl font-bold text-gray-900 font-mono">
-              3
+              {transactions.length}
             </span>
           </div>
         </div>
@@ -177,10 +171,6 @@ export default function TellerDashboard() {
           </div>
         </div>
       </div>
-
-      {/* 2-Column Main Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Recent Transactions Table (col-span-8) */}
         <div className="lg:col-span-8 bg-white border border-[#e5e7eb] rounded-lg overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col min-h-110">
           {/* Header */}
           <div className="px-6 py-4 flex items-center justify-between border-b border-[#e5e7eb]">
@@ -219,25 +209,43 @@ export default function TellerDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e5e7eb]/80">
-                {tellerTransactions.map((tx, idx) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500">
+                      {t('loading')}
+                    </td>
+                  </tr>
+                ) : errorMessage ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-8 text-center text-sm text-red-600">
+                      {errorMessage}
+                    </td>
+                  </tr>
+                ) : tellerTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500">
+                      {t('no_transactions')}
+                    </td>
+                  </tr>
+                ) : tellerTransactions.map((tx, idx) => (
                   <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
                     {/* TIME */}
-                    <td className="py-4 px-6 text-xs font-mono font-medium text-gray-900 whitespace-nowrap">
+                    <td className="py-4 px-6 text-xl font-mono font-medium text-gray-900 whitespace-nowrap">
                       {tx.time}
                     </td>
 
                     {/* TYPE */}
-                    <td className="py-4 px-6 text-sm font-medium text-gray-900 whitespace-nowrap font-sans">
+                    <td className="py-4 px-6 text-xl font-medium text-gray-900 whitespace-nowrap font-sans">
                       {t(tx.type.toLowerCase()) || tx.type}
                     </td>
 
                     {/* ACCOUNT */}
-                    <td className="py-4 px-6 text-sm font-mono text-gray-700 whitespace-nowrap">
+                    <td className="py-4 px-6 text-xl font-mono text-gray-700 whitespace-nowrap">
                       {tx.account}
                     </td>
 
                     {/* AMOUNT */}
-                    <td className="py-4 px-6 text-sm font-mono font-bold text-gray-900 whitespace-nowrap">
+                    <td className="py-4 px-6 text-xl font-mono font-bold text-gray-900 whitespace-nowrap">
                       {tx.amount}
                     </td>
 
@@ -253,91 +261,6 @@ export default function TellerDashboard() {
             </table>
           </div>
         </div>
-
-        {/* Right Column: Quick Lookup + System Alerts (col-span-4) */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Quick Lookup Card */}
-          <div className="bg-white border border-[#e5e7eb] rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-            <h2 className="text-base font-bold text-gray-900 font-sans">
-              {t('quick_lookup')}
-            </h2>
-            <form onSubmit={handleLookupSubmit} className="mt-3">
-              <label
-                htmlFor="account-lookup-input"
-                className="block text-xs font-normal text-gray-500 mb-1.5 font-sans"
-              >
-                {t('account_number_or_id')}
-              </label>
-              <div className="relative flex items-center border border-[#d1d5db] rounded-md overflow-hidden bg-white focus-within:border-gray-500 transition-colors">
-                <input
-                  id="account-lookup-input"
-                  type="text"
-                  value={quickLookupId}
-                  onChange={(e) => setQuickLookupId(e.target.value)}
-                  placeholder="000-000-0000"
-                  className="w-full h-10 px-3 text-sm font-mono text-gray-800 placeholder:text-gray-400 focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  aria-label={t('search_account')}
-                  disabled={isLookingUp}
-                  className="h-10 px-3.5 border-l border-[#e5e7eb] text-gray-600 hover:text-black hover:bg-gray-50 transition cursor-pointer flex items-center justify-center shrink-0"
-                >
-                  <Search className="w-4 h-4 stroke-2" />
-                </button>
-              </div>
-              {isLookingUp && (
-                <p className="mt-2 text-xs text-gray-500 font-sans">{t('looking_up_customer')}</p>
-              )}
-              {lookupError && (
-                <p className="mt-2 text-xs text-red-600 font-sans">{lookupError}</p>
-              )}
-              {lookupResult && (
-                <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-xs font-sans">
-                  <div>
-                    <dt className="text-gray-500">{t('account_number')}</dt>
-                    <dd className="mt-1 font-mono text-gray-900">{lookupResult.account_number || '-'}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-gray-500">{t('student_id')}</dt>
-                    <dd className="mt-1 text-gray-900">{lookupResult.student_id || '-'}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-gray-500">{t('student_name')}</dt>
-                    <dd className="mt-1 text-gray-900">{lookupResult.student_name || '-'}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-gray-500">{t('class')}</dt>
-                    <dd className="mt-1 text-gray-900">{lookupResult.student_class || '-'}</dd>
-                  </div>
-                  <div className="col-span-2">
-                    <dt className="text-gray-500">{t('balance')}</dt>
-                    <dd className="mt-1 font-mono font-semibold text-gray-900">{lookupResult.balance ?? '-'}</dd>
-                  </div>
-                </dl>
-              )}
-            </form>
-          </div>
-
-          {/* System Alerts Card */}
-          <div className="bg-white border border-[#e5e7eb] rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-64">
-            <h2 className="text-base font-bold text-gray-900 font-sans">
-              {t('system_alerts')}
-            </h2>
-            <div className="mt-4 flex items-start gap-3">
-              <Info className="w-5 h-5 text-gray-500 stroke-[1.8] shrink-0 mt-0.5" />
-              <div>
-                <h3 className="text-sm font-medium text-gray-900 font-sans leading-tight">
-                  {t('system_update_scheduled')}
-                </h3>
-                <p className="text-xs text-gray-500 mt-1 font-sans">
-                  {t('system_update_desc')}
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
-    </div>
   );
 }

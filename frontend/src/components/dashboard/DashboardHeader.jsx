@@ -9,6 +9,7 @@ export default function DashboardHeader({
   searchValue = '',
   onSearchChange,
   searchPlaceholder,
+  onSearchSubmit,
   showSearch = true,
   searchOnLeft = false,
   user = null,
@@ -32,6 +33,9 @@ export default function DashboardHeader({
               type="text"
               value={searchValue}
               onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onSearchSubmit?.(e.currentTarget.value);
+              }}
               placeholder={effectivePlaceholder}
               className="w-56 sm:w-96 h-9 pl-9 pr-3 bg-[#f1f3f5] border border-transparent rounded-md text-xs sm:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-gray-300 transition-colors"
             />
@@ -52,6 +56,9 @@ export default function DashboardHeader({
               type="text"
               value={searchValue}
               onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onSearchSubmit?.(e.currentTarget.value);
+              }}
               placeholder={effectivePlaceholder}
               className="w-56 sm:w-64 h-9 pl-9 pr-3 bg-white border border-[#e5e7eb] rounded-md text-xs sm:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 transition-colors"
             />
