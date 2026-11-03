@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Models\DailyReport;
 use App\Models\User;
 use App\Services\LogService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class DailyReportController extends Controller
@@ -28,9 +29,11 @@ class DailyReportController extends Controller
 
     public function initiateStore(int $user_id)
     {
+         $today = Carbon::today();
         try {
             $transactions = Transaction::with('customer')
                 ->where('user_id', $user_id)
+                ->where('transaction_date', $today)
                 ->whereNull('daily_report_id')
                 ->get();
 
