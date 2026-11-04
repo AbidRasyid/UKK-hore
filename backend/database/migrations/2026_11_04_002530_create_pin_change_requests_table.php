@@ -12,10 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pin_change_requests', function (Blueprint $table) {
+        Schema::create('change_pin_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
-            $table->string('new_pin_hash'); // PIN baru di-hash, admin ga bisa liat
+            $table->string('new_pin');
             $table->enum('status', array_column(PinStatus::cases(), 'value'))->default(PinStatus::PENDING->value);
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
@@ -30,3 +30,4 @@ return new class extends Migration
         Schema::dropIfExists('pin_change_requests');
     }
 };
+
