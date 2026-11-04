@@ -54,10 +54,10 @@ class AuthController extends Controller
         try {
             $validated = $request->validate([
                 'student_id' => ['required', 'string'],
-                'pin' => ['required', 'string', 'size:6']
+                'password' => ['required', 'string']
             ]);
             $customer = Customer::query()->where('student_id', '=', $validated['student_id'])->first();
-            if ((!$customer || !Hash::check($validated['pin'], $customer->pin))) {
+            if ((!$customer || !Hash::check($validated['password'], $customer->password))) {
                 return response()->json([
                     'error' => 'user invalid'
                 ], 400);
