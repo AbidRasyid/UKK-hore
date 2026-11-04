@@ -43,7 +43,7 @@ const handleLogin = async (e) => {
 
   const handleForgotPassword = (e) => {
     e.preventDefault();
-    setInfoMsg(t("login_help"));
+    navigate("/forgot-password");
   };
 
   return (
