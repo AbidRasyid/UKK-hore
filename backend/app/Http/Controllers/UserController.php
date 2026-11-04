@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UserRequest;
-use App\ActivityAction;
+use App\enum\ActivityAction;
 use App\Models\User;
 use App\Services\LogService;
 use Illuminate\Http\JsonResponse;
