@@ -1,266 +1,201 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
-import { 
-  Receipt, 
-  ArrowDown, 
-  ArrowUp, 
-} from 'lucide-react';
+import { useNavigate} from 'react-router-dom';
 import api from '../../api/axios';
 import { useLanguage } from '../../hooks/useLanguage';
-
-const CashDrawerIcon = ({ className = "w-5 h-5 text-gray-900" }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    aria-hidden="true"
-  >
-    <path d="M7 4h10l1.5 5H5.5L7 4z" />
-    <rect x="8.5" y="6" width="7" height="1.2" rx="0.4" fill="white" />
-    <rect x="3" y="10.5" width="18" height="9.5" rx="1.5" />
-    <rect x="9.5" y="14" width="5" height="2" rx="0.5" fill="white" />
-  </svg>
-);
+import { QrCode, Search } from 'lucide-react';
+import QrScannerModal from '../accounts/QrScannerModal';
 
 export default function TellerDashboard() {
   const navigate = useNavigate();
-  const { user } = useOutletContext();
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
   const { t } = useLanguage();
+  
+  // State untuk input pencarian dan hasil pencarian
+  const [searchInput, setSearchInput] = useState("");
+  const [searchResult, setSearchResult] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
-  // Personalized session started time
-  const [sessionStartTime] = useState(() => {
-    return '08:42 AM';
-  });
 
+  // 1. debounce effect
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchTransactions = async () => {
-      if (!user?.id) {
-        setTransactions([]);
-        setLoading(false);
+    const timer = setTimeout(() => {
+      const query = searchInput.trim();
+      
+      if (!query) {
+        setSearchResult([]);
         return;
       }
 
-      setLoading(true);
-      setErrorMessage("");
-
-      try {
-        const response = await api.get(`/api/transactions/${user.id}`);
-        const data = response.data?.data;
-
-        if (!Array.isArray(data)) {
-          throw new Error("Transactions response has an invalid format.");
+      const fetchSearchResult = async () => {
+        setIsSearching(true);
+        setErrorMessage("");
+        try {
+          const res = await api.get(`/api/customer?s=${query}`);
+          setSearchResult(res.data.data || []);
+        } catch (e) {
+          console.error("Failed to search customer", e);
+          setErrorMessage(t("failed_search_customer"));
+          setSearchResult([]);
+        } finally {
+          setIsSearching(false);
         }
+      };
 
-        if (isMounted) {
-          setTransactions(data);
+      fetchSearchResult();
+    }, 500); // 500ms
+
+    // Cleanup
+    return () => clearTimeout(timer);
+  }, [searchInput, t]); // Jalan setiap kali searchInput berubah
+
+  // 2. manual search button
+  const handleManualSearch = () => {
+    const query = searchInput.trim();
+    if (!query) return;
+
+    setIsSearching(true);
+    setErrorMessage("");
+    api.get(`/api/customer?s=${query}`)
+      .then((res) => {
+        setSearchResult(res.data.data || []);
+      })
+      .catch((e) => {
+        console.error(e);
+        setErrorMessage(t("failed_search_customer"));
+        setSearchResult([]);
+      })
+      .finally(() => {
+        setIsSearching(false);
+      });
+  };
+
+
+  const handleQrSuccess = (scannedAccountNumber) => {
+    setSearchInput(scannedAccountNumber);
+    api.get(`/api/customer?s=${encodeURIComponent(scannedAccountNumber)}`)
+      .then((res) => {
+        const customers = res.data.data || []
+
+        const firstCustomer = customers[0]
+        if(firstCustomer) {
+          navigate(`/account/${firstCustomer.id}/transactions`, {
+            state: { customer: firstCustomer }
+          });
+        }else{
+          setErrorMessage(t("no_accounts"));
         }
-      } catch (error) {
-        console.error("Failed to load teller transactions", error);
-        if (isMounted) {
-          setErrorMessage(
-            error.response?.data?.message ||
-              "Transactions could not be loaded. Please try again."
-          );
-          setTransactions([]);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
+      }).finally(() => {
+        setIsScannerOpen(false);
+      })
+  };
 
-    fetchTransactions();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user?.id]);
-
-  const tellerTransactions = transactions.slice(0, 10).map((transaction) => ({
-    time: transaction.transaction_date,
-    type: transaction.transaction_type,
-    account: transaction.account_number,
-    amount: transaction.amount,
-    status: 'completed',
-  }));
-
+  // 3. RENDER UI
   return (
-    <div className="p-6 lg:p-8 space-y-6">
-      {/* Page Title & Subtitle */}
-      <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 font-sans">
-            {t('overview')}
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 font-sans">
-            {t('session_started')} {sessionStartTime}
-            {user?.fullname && (
-              <span className="ml-2 text-gray-400">
-                • {t('logged_in_as')} <span className="text-gray-700 font-medium">{user.fullname}</span>
-              </span>
-            )}
-          </p>
-        </div>
-      </div>
+    <div className="min-h-full bg-transparent">
 
-      {/* 4 Stat Cards in 1 Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* TODAY'S TRANSACTIONS */}
-        <div className="bg-white border border-[#e5e7eb] rounded-lg p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between min-h-32">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              {t('todays_transactions')}
-            </span>
-            <Receipt className="w-5 h-5 text-gray-700 stroke-[1.8]" />
-          </div>
-          <div className="mt-4 text-right">
-            <span className="text-3xl font-bold text-gray-900 font-mono">
-              {transactions.length}
-            </span>
-          </div>
-        </div>
+      <main className="mx-auto flex min-h-[calc(100vh-4.25rem)] w-full max-w-3xl flex-col items-center px-5 py-20 sm:px-8">
+        <p className="text-center text-sm text-gray-400">
+          {t("enter_account_number")}
+        </p>
 
-        {/* TOTAL DEPOSITS */}
-        <div className="bg-white border border-[#e5e7eb] rounded-lg p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between min-h-32">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              {t('total_deposits')}
-            </span>
-            <ArrowDown className="w-5 h-5 text-emerald-600 stroke-[2.5]" />
-          </div>
-          <div className="mt-4 text-right">
-            <span className="text-2xl lg:text-3xl font-bold text-gray-900 font-mono">
-              Rp. 300.000
-            </span>
-          </div>
-        </div>
-
-        {/* TOTAL WITHDRAWALS */}
-        <div className="bg-white border border-[#e5e7eb] rounded-lg p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between min-h-32">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              {t('total_withdrawals')}
-            </span>
-            <ArrowUp className="w-5 h-5 text-[#b45309] stroke-[2.5]" />
-          </div>
-          <div className="mt-4 text-right">
-            <span className="text-2xl lg:text-3xl font-bold text-gray-900 font-mono">
-              Rp. 100.000
-            </span>
-          </div>
-        </div>
-
-        {/* DRAWER BALANCE */}
-        <div className="bg-white border border-[#e5e7eb] rounded-lg p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between min-h-32">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              {t('drawer_balance')}
-            </span>
-            <CashDrawerIcon className="w-5 h-5 text-gray-900" />
-          </div>
-          <div className="mt-4 text-right">
-            <span className="text-2xl lg:text-3xl font-bold text-gray-900 font-mono">
-              Rp. 5.000.000
-            </span>
-          </div>
-        </div>
-      </div>
-        <div className="lg:col-span-8 bg-white border border-[#e5e7eb] rounded-lg overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col min-h-110">
-          {/* Header */}
-          <div className="px-6 py-4 flex items-center justify-between border-b border-[#e5e7eb]">
-            <h2 className="text-base font-semibold text-gray-900 font-sans">
-              {t('recent_transactions')}
-            </h2>
+        <section className="mt-9 w-full max-w-xl bg-white p-6 sm:p-7">
+          <div className="flex h-15 items-center border border-gray-300 bg-gray-50">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.currentTarget.blur();
+                  handleManualSearch();
+                }
+              }}
+              placeholder="000 000"
+              aria-label={t("account_number")}
+              className="min-w-0 flex-1 bg-transparent px-4 text-center font-mono text-lg tracking-[0.18em] text-gray-900 outline-none placeholder:text-gray-300"
+            />
             <button
               type="button"
-              onClick={() => navigate('/reports')}
-              className="text-xs font-medium text-gray-700 hover:text-black hover:underline cursor-pointer font-sans"
+              onClick={() => {
+                setErrorMessage("");
+                setIsScannerOpen(true);
+              }}
+              className="mr-2 inline-flex h-10 items-center gap-1.5 rounded border border-gray-300 bg-white px-3 text-xs font-medium text-gray-700 transition hover:border-gray-500 hover:text-gray-900"
             >
-              {t('view_all')}
+              <QrCode className="h-4 w-4" />
+              Scan QR
             </button>
           </div>
+          <button
+            type="button"
+            onClick={handleManualSearch}
+            disabled={isSearching}
+            className="mt-4 flex h-10 w-full items-center justify-center gap-2 bg-black text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50"
+          >
+            <Search className="h-4 w-4" />
+            {isSearching ? t("searching") : t("search")}
+          </button>
+        </section>
 
-          {/* Table */}
-          <div className="overflow-x-auto flex-1">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-[#e5e7eb] bg-transparent">
-                  <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    {t('time')}
-                  </th>
-                  <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    {t('type')}
-                  </th>
-                  <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    {t('account')}
-                  </th>
-                  <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    {t('amount')}
-                  </th>
-                  <th className="py-3 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans text-center">
-                    {t('status')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#e5e7eb]/80">
-                {loading ? (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500">
-                      {t('loading')}
-                    </td>
-                  </tr>
-                ) : errorMessage ? (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-8 text-center text-sm text-red-600">
-                      {errorMessage}
-                    </td>
-                  </tr>
-                ) : tellerTransactions.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500">
-                      {t('no_transactions')}
-                    </td>
-                  </tr>
-                ) : tellerTransactions.map((tx, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                    {/* TIME */}
-                    <td className="py-4 px-6 text-xl font-mono font-medium text-gray-900 whitespace-nowrap">
-                      {tx.time}
-                    </td>
-
-                    {/* TYPE */}
-                    <td className="py-4 px-6 text-xl font-medium text-gray-900 whitespace-nowrap font-sans">
-                      {t(tx.type.toLowerCase()) || tx.type}
-                    </td>
-
-                    {/* ACCOUNT */}
-                    <td className="py-4 px-6 text-xl font-mono text-gray-700 whitespace-nowrap">
-                      {tx.account}
-                    </td>
-
-                    {/* AMOUNT */}
-                    <td className="py-4 px-6 text-xl font-mono font-bold text-gray-900 whitespace-nowrap">
-                      {tx.amount}
-                    </td>
-
-                    {/* STATUS */}
-                    <td className="py-4 px-6 whitespace-nowrap text-center">
-                      <span className="inline-block text-center text-xs font-medium px-3 py-1 rounded bg-[#15803d] text-white font-sans">
-                        {t(tx.status.toLowerCase()) || tx.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <section className="mt-6 w-full max-w-xl overflow-hidden border border-gray-300 bg-white">
+          <div className="flex items-center justify-between border-b border-gray-300 bg-gray-50 px-3 py-3">
+            <h2 className="text-[11px] font-semibold uppercase text-gray-600">{t("search_result")}</h2>
+            {searchResult.length > 0 && (
+              <span className="bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white">
+                {t("active")}
+              </span>
+            )}
           </div>
-        </div>
-        </div>
+
+          {isSearching ? (
+            <p className="px-5 py-8 text-center text-sm text-gray-500">{t("searching")}</p>
+          ) : errorMessage ? (
+            <p className="px-5 py-8 text-center text-sm text-red-600">{errorMessage}</p>
+          ) : searchResult.length === 0 ? (
+            <p className="px-5 py-8 text-center text-sm text-gray-500">
+              {searchInput ? t("no_accounts") : t("search_account_begin")}
+            </p>
+          ) : (
+            searchResult.map((customer) => (
+              <button
+                type="button"
+                key={customer.id}
+                onClick={() => navigate(`/account/${customer.id}/transactions`, { state: { customer } })}
+                className="block w-full border-b border-gray-300 text-left transition hover:bg-gray-50 last:border-b-0"
+              >
+                <div className="flex items-start justify-between gap-5 px-5 py-5">
+                  <div>
+                    <p className="text-[11px] text-gray-500">{t("customer_name")}</p>
+                    <p className="mt-1 text-sm font-medium text-gray-900">
+                      {customer.student_name || "-"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] text-gray-500">{t("account_number")}</p>
+                    <p className="mt-1 font-mono text-sm font-semibold tracking-wide text-gray-900">
+                      {customer.account_number || "-"}
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-gray-50 px-5 py-3 text-right text-xs font-medium text-gray-600">
+                  {t("open_transactions")}
+                </div>
+              </button>
+            ))
+          )}
+        </section>
+      </main>
+      {isScannerOpen && (
+        <QrScannerModal
+          onClose={() => setIsScannerOpen(false)}
+          onError={(error) => {
+            console.error("QR scanner error", error);
+            setErrorMessage(error.message || t("qr_scanner_error"));
+          }}
+          onAccountDetected={handleQrSuccess}
+        />
+      )}
+    </div>
   );
 }
