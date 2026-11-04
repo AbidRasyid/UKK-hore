@@ -1,5 +1,6 @@
 <?php
 
+use App\enum\Majors;
 use App\enum\Status;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -20,9 +21,9 @@ return new class extends Migration
             $table->string('account_number')->unique();
             $table->string('student_id')->unique();
             $table->string('student_name');
-            $table->string('student_class');
+            $table->enum('student_class', array_column(Majors::cases(), 'value'));
             $table->unsignedBigInteger('balance')->default(10000);
-            $table->string('password');
+            // $table->string('password');
             $table->string('pin');
             $table->enum('status', array_column(Status::cases(), 'value'))->default(Status::ACTIVE->value);
             $table->timestamps();
