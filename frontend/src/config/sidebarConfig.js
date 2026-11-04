@@ -48,19 +48,33 @@ export const menuItems = [
     icon: settingIcon,
     roles: ['administrator', 'admin'],
   },
+  {
+    id: 'pin-requests',
+    titleKey: 'pin_requests',
+    path: '/pin-requests',
+    icon: settingIcon,
+    roles: ['administrator', 'admin'],
+  },
+  {
+    id: 'transactions',
+    titleKey: 'transactions',
+    path: '/transactions',
+    icon: accountIcon,
+    roles: ['teller'],
+  }
 ];
 
 /**
  * Filter menu items based on user role.
  * - administrator / admin: all buttons are shown
  * - supervisor: only dashboard, report, and journal
- * - teller: only dashboard, accounts, and report
+ * - teller: only dashboard, transactions, and report
  */
 export const getFilteredMenuItems = (role) => {
   const normalizedRole = (role || '').toLowerCase().trim();
 
   if (normalizedRole === 'administrator' || normalizedRole === 'admin') {
-    return menuItems.filter((item) => ['dashboard', 'users', 'accounts', 'journals', 'settings'].includes(item.id));
+    return menuItems.filter((item) => ['dashboard', 'users', 'accounts', 'journals', 'pin-requests', 'settings'].includes(item.id));
   }
 
   if (normalizedRole === 'supervisor') {
@@ -71,7 +85,7 @@ export const getFilteredMenuItems = (role) => {
 
   if (normalizedRole === 'teller') {
     return menuItems.filter((item) =>
-      ['dashboard', 'accounts', 'reports'].includes(item.id)
+      ['dashboard', 'transactions', 'reports'].includes(item.id)
     );
   }
 
