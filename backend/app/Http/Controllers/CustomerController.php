@@ -11,8 +11,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
-
-use function Laravel\Prompts\search;
+use Illuminate\Support\Str;
 
 function account_number(Customer $customer) {
     $now = Carbon::now();
@@ -40,6 +39,7 @@ class CustomerController extends Controller
         try{
             $validated = $request->validate([
                 "student_name" => ['required', 'string'],
+                "email" => ['nullable', 'email', 'unique:customers,email'],
                 "student_id" => ['required', 'string'],
                 "student_class" => ['required', 'string'],
                 "password" => ['required', 'string'],
@@ -54,6 +54,7 @@ class CustomerController extends Controller
                     'student_id' => $validated['student_id'],
                     'account_number' => $academic_year . $validated['student_id'],
                     'student_name' => $validated['student_name'],
+                    'email' => $validated['email'] ?? null,
                     'student_class' => $validated['student_class'],
                     'password' => $validated['password'],
                     'status' => Status::ACTIVE->value,
@@ -132,6 +133,7 @@ class CustomerController extends Controller
             $customer = Customer::findOrFail($customer_id);
             $validated = $request->validate([
                 "student_name" => ['sometimes', 'required', 'string'],
+                "email" => ['sometimes', 'nullable', 'email', Rule::unique('customers', 'email')->ignore($customer->id)],
                 "student_id" => ['sometimes', 'required', 'string'],
                 "student_class" => ['sometimes', 'required', 'string'],
                 "password" => ['sometimes', 'required', 'string'],
@@ -145,6 +147,10 @@ class CustomerController extends Controller
 
             if(array_key_exists('student_name', $validated)){
                 $updateData['student_name'] = $validated['student_name'];
+            }
+
+            if(array_key_exists('email', $validated)){
+                $updateData['email'] = $validated['email'];
             }
 
             if(array_key_exists('student_class', $validated)){
@@ -187,6 +193,48 @@ class CustomerController extends Controller
                 'line' => $th->getLine()
             ], 400);
         }
+    }
+
+    public function updateEmail(Request $request): JsonResponse
+    {
+        $customer = $request->user('customer');
+
+        if (!$customer) {
+            return response()->json([
+                'message' => 'Customer authentication is required.',
+            ], 401);
+        }
+
+        $validated = $request->validate([
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('customers', 'email')->ignore($customer->getKey()),
+            ],
+        ]);
+
+        $email = Str::lower($validated['email']);
+
+        if (Str::lower((string) $customer->email) === $email) {
+            return response()->json([
+                'message' => 'The new email must be different from the current email.',
+            ], 422);
+        }
+
+        if (Customer::query()
+            ->where('id', '!=', $customer->getKey())
+            ->whereRaw('LOWER(email) = ?', [$email], 'and')
+            ->exists()) {
+            return response()->json([
+                'message' => 'The email has already been taken.',
+            ], 422);
+        }
+
+        $customer->update(['email' => $email]);
+
+        return response()->json([
+            'message' => 'Email updated successfully.',
+        ], 200);
     }
 
     public function delete(int $customer_id):JsonResponse
