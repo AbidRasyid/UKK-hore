@@ -14,6 +14,7 @@ export default function CustomerFormPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [studentName, setStudentName] = useState("");
+  const [email, setEmail] = useState("");
   const [studentId, setStudentId] = useState("");
   const [studentClass, setStudentClass] = useState("");
   const [password, setPassword] = useState("");
@@ -29,6 +30,7 @@ export default function CustomerFormPage() {
         const customer = response.data.data;
 
         setStudentName(customer.student_name ?? "");
+        setEmail(customer.email ?? "");
         setStudentId(customer.student_id ?? "");
         setStudentClass(customer.student_class ?? "");
         setPassword("");
@@ -50,6 +52,7 @@ export default function CustomerFormPage() {
 
     const payload = {
       student_name: studentName.trim(),
+      email: email.trim() || null,
       student_id: studentId.trim(),
       student_class: studentClass.trim(),
       password: password.trim(),
@@ -169,6 +172,19 @@ export default function CustomerFormPage() {
                   onChange={(event) => setStudentName(event.target.value)}
                   placeholder={t("enter_full_name")}
                   required
+                  className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Email
+                </span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="student@example.com"
                   className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                 />
               </label>
