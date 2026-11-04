@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\ChangePinController;
+use App\Http\Controllers\CustomerPasswordResetController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use App\enum\UserRole;
@@ -52,6 +54,9 @@ Route::post('/test-fcm', function (Request $request) {
 Broadcast::routes(['middleware' => ['auth:sanctum']]);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/customer/login', [AuthController::class, 'CustomerLogin']);
+Route::post('/customer/forgot-password', [CustomerPasswordResetController::class, 'forgot'])
+    ->middleware('throttle:forgot-password');
+Route::post('/customer/reset-password', [CustomerPasswordResetController::class, 'reset']);
 Route::middleware('auth:sanctum')->get('/me', function (\Illuminate\Http\Request $request) {
     return response()->json($request->user());
 });
@@ -73,12 +78,17 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value . ','
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->group(function(){
+    Route::get('/pin-change-requests', [ChangePinController::class, 'index']);
+    Route::patch('/pin-change-request/{id}', [ChangePinController::class, 'update']);
+
     Route::post('/user', [UserController::class, 'store']);
     Route::patch('/user/{user_id}/edit', [UserController::class, 'update']);
 
     Route::post('/customers', [CustomerController::class, 'store']);
     Route::patch('/customer/{customer_id}/edit', [CustomerController::class, 'update']);
     Route::delete('/customer/{customer_id}/delete', [CustomerController::class, 'delete']);
+
+    Route::get('/pin-requests', [ChangePinController::class, 'index']);
     Route::get('/activity-logs', function(){
         return response()->json([
             'data' => ActivityLog::with('user')->orderBy('created_at', 'desc')->take(50)->get()
@@ -102,6 +112,9 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::TELLER->value])->group(fun
 });
 
 Route::middleware(['auth:customer'])->group(function(){
+    Route::post('/customer/change-pin', [ChangePinController::class, 'store']);
+    Route::post('/customer/change-password', [CustomerPasswordResetController::class, 'change']);
+    Route::patch('/customer/email', [CustomerController::class, 'updateEmail']);
     Route::post('/customer/{customer_id}/transaction/confirm', [TransactionController::class, 'confirmStore']);
     Route::get('/customer/{customer_id}/transactions', [TransactionController::class, 'show']);
     Route::post('/customer/fcm-token', function(Request $request){
