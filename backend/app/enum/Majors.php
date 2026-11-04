@@ -4,12 +4,12 @@ namespace App\enum;
 
 enum Majors: string
 {
-    case RPL = 'Rekayasa Perangkat Lunak';
-    case TKJ = 'Teknik Komputer dan Jaringan';
-    case DKV = 'Desain Komunikasi Visual';
-    case MP = 'Manajemen Perkantoran';
-    case AK = 'Akuntansi';
-    case BR = 'Bisnis Retail';
-    case BD = 'Bisnis Digital';
-    case LPS = 'Lembaga Perbankan Syariah';
+    case RPL = 'rpl';
+    case TKJ = 'tkj';
+    case DKV = 'dkv';
+    case MP = 'mp';
+    case AK = 'ak';
+    case BR = 'br';
+    case BD = 'bd';
+    case LPS = 'lps';
 }
