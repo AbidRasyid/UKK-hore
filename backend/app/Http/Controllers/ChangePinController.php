@@ -9,13 +9,15 @@ use App\Models\Customer;
 use App\Services\LogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Laravel\Firebase\Facades\Firebase;
 
 class ChangePinController extends Controller
 {
     public function index() {
-        $request = ChangePinRequest::with('customer:id,student_name,account_number')
-            ->where('status', PinStatus::PENDING->value)
-            ->get();
+        $request = ChangePinRequest::with('customer:id,student_name,account_number')->get();
         return response()->json([
             'data' => $request
         ]);
@@ -44,36 +46,75 @@ class ChangePinController extends Controller
 
     ChangePinRequest::create([
         'customer_id' => $customer->id,
-        'new_pin_hash' => $request->new_pin,
+        'new_pin' => $request->new_pin,
         'status' => PinStatus::PENDING->value,
     ]);
 
     return response()->json(['message' => 'Permintaan ganti PIN dikirim. Menunggu persetujuan Admin.']);
     }
 
-    public function update(Request $request, $id) {
+    public function update(Request $request, int $id) {
+        $validated = $request->validate([
+            'status' => ['required', Rule::enum(PinStatus::class)]
+        ]);
         $pinRequest = ChangePinRequest::findOrFail($id);
+        $customer = Customer::findOrFail($pinRequest->customer_id);
     
-    if ($pinRequest->status !== 'pending') {
-        return response()->json(['message' => 'Request sudah diproses'], 400);
+        if ($pinRequest->status !== PinStatus::PENDING) {
+            return response()->json(['message' => 'Request sudah diproses'], 400);
+        }
+
+        $status = $validated['status'];
+        $pinRequest->update([
+            'status' => $status,
+            'approved_by' => $request->user()->id,
+        ]);
+
+        if ($status === PinStatus::APPROVED->value) {
+            $customer->update(['pin' => $pinRequest->new_pin]);
+        }
+
+        $message = $status === PinStatus::APPROVED->value
+            ? 'Permintaan perubahan PIN disetujui'
+            : 'Permintaan perubahan PIN ditolak';
+
+        LogService::record(
+            ActivityAction::CUSTOMER_UPDATED,
+            "PIN change {$status} by " . $request->user()->fullname . " for Customer ID {$customer->id}."
+        );
+        $this->sendStatusNotification($customer, $pinRequest->id, $status, $message);
+
+        return response()->json([
+            'message' => $message,
+            'data' => $pinRequest->fresh(),
+        ]);
     }
 
-    // 1. Ganti PIN nasabah dengan PIN baru dari request
-    $customer = Customer::findOrFail($pinRequest->customer_id);
-    $customer->update(['pin' => $request->new_pin_hash]);
+    private function sendStatusNotification(Customer $customer, int $requestId, string $status, string $message): void
+    {
+        if (!$customer->fcm_token) {
+            Log::warning("FCM Token kosong untuk Customer ID {$customer->id}");
+            return;
+        }
 
-    // 2. Update status request
-    $pinRequest->update([
-        'status' => 'approved',
-        'approved_by' => $request->user()->id,
-    ]);
-
-    // 3. Log ke Activity Log
-    LogService::record(
-        ActivityAction::CUSTOMER_UPDATED,
-        "PIN change approved by " . $request->user()->fullname . " for Customer ID {$customer->id}."
-    );
-
-    return response()->json(['message' => 'PIN berhasil diubah']);
+        try {
+            Firebase::messaging()->send(CloudMessage::fromArray([
+                'token' => $customer->fcm_token,
+                'notification' => [
+                    'title' => 'Permintaan Perubahan PIN',
+                    'body' => $message,
+                ],
+                'data' => [
+                    'type' => 'PIN_CHANGE_RESULT',
+                    'reference_id' => (string) $requestId,
+                    'status' => $status,
+                ],
+                'android' => [
+                    'priority' => 'high',
+                ],
+            ]));
+        } catch (\Throwable $e) {
+            Log::error("Gagal kirim notifikasi perubahan PIN: {$e->getMessage()}");
+        }
     }
 }
