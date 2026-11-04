@@ -19,6 +19,7 @@ class Customer extends Authenticatable
         'account_number',
         'student_id',
         'student_name',
+        'email',
         'student_class',
         'balance',
         'password',
