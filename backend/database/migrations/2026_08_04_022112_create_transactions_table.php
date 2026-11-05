@@ -25,7 +25,6 @@ return new class extends Migration
     $table->foreignId('daily_report_id')
         ->nullable()
         ->default(null);
-
     $table->date('transaction_date');
     $table->enum('transaction_type', array_column(TransactionTypes::cases(), 'value'));
     $table->unsignedBigInteger('amount');
