@@ -8,7 +8,7 @@ export default function CustomerTable({ loading, customers, onDelete }) {
       <table className="min-w-full rounded-lg border border-gray-200 bg-white">
         <thead>
           <tr className="bg-gray-100">
-            {[t("no"), t("name"), t("account_number"), t("student_id"), t("class"), t("status"), t("actions")].map((heading) => (
+            {[t("no"), t("name"), t("account_number"), t("student_id"), t("major"), t("status"), t("actions")].map((heading) => (
               <th key={heading} className="px-6 py-3 text-left text-sm font-medium text-gray-700">{heading}</th>
             ))}
           </tr>
