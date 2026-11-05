@@ -45,12 +45,15 @@ function App() {
               <Route path="/pin-requests" element={<PinRequestsPage />} />
               <Route path="/account/add" element={<CustomerFormPage />} />
               <Route path="/account/:customer_id/edit" element={<CustomerFormPage />} />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['administrator', 'admin', 'supervisor']}/>}>
               <Route path="/journals" element={<JournalsPage />} />
             </Route>
             
             <Route element={<ProtectedRoute allowedRoles={['teller']}/>}>
               <Route path="/transactions" element={<TellerTransactionsPage />} />
-              <Route path="/account/transactions" element={<CustomerTransactionPage />} />
+              <Route path="/account/:customer_id/transactions" element={<CustomerTransactionPage />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['supervisor', 'teller']}/>}>
