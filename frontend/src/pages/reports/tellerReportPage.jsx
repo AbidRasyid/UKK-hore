@@ -140,7 +140,7 @@ export default function TellerReportPage() {
           <table className="min-w-full rounded-lg border border-gray-200 bg-white">
             <thead>
               <tr className="bg-gray-100">
-                {[t("no"), t("report_date"), t("deposits"), t("withdrawals"), t("system_balance"), t("physical_balance"), t("status"), t("actions")].map((heading) => (
+                {[t("no"), t("report_date"), t("deposits"), t("withdrawals"), t("system_balance"), "Closing balance", t("status"), t("actions")].map((heading) => (
                   <th key={heading} className="px-6 py-3 text-left text-sm font-medium text-gray-700">{heading}</th>
                 ))}
               </tr>
@@ -160,7 +160,7 @@ export default function TellerReportPage() {
                       <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(report.total_deposits)}</td>
                       <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(report.total_withdrawals)}</td>
                       <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(report.system_balance)}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(report.physical_balance)}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(report.closing_balance ?? report.physical_balance)}</td>
                       <td className="px-6 py-4 text-sm">
                         <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusStyles[status] || statusStyles.pending}`}>{t(status) || status}</span>
                       </td>
