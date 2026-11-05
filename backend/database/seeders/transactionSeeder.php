@@ -18,6 +18,7 @@ class transactionSeeder extends Seeder
     {
         $teller = User::where('username', '=', 'teller', 'and')->firstOrFail();
         $report = DailyReport::whereDate('report_date', today())->firstOrFail();
+        $shiftId = $report->shift_id;
 
         $transactions = [
             [
@@ -42,6 +43,7 @@ class transactionSeeder extends Seeder
                 $transaction + [
                     'user_id' => $teller->id,
                     'daily_report_id' => $report->id,
+                    'shift_id' => $shiftId,
                     'transaction_date' => today()->toDateString(),
                 ],
             );
