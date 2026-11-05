@@ -9,6 +9,8 @@ use App\Events\TransactionCompleted;
 use App\Models\AccountingJournal;
 use App\Models\Customer;
 use App\Models\Configuration;
+use App\Models\Shift;
+use App\Models\Teller;
 use App\Models\Transaction;
 use App\enum\Positions;
 use Illuminate\Http\Request;
@@ -101,6 +103,19 @@ class TransactionController extends Controller
 
         $validated['user_id'] = Auth::id();
         $validated['customer_id'] = $customer_id;
+        $teller = Teller::query()->where('user_id', $validated['user_id'])->first();
+        $shift = $teller?->shifts()
+            ->where('status', 'open')
+            ->latest('opened_at')
+            ->first();
+
+        if (!$shift) {
+            return response()->json([
+                'status' => 'fail',
+                'message' => 'Open a shift before initiating transactions.',
+            ], 409);
+        }
+
         $minimumBalance = $this->getMinimumBalance();
         
         $customer = Customer::findOrFail($customer_id);
@@ -129,6 +144,7 @@ class TransactionController extends Controller
             'amount' => $validated['amount'],
             'transaction_type' => $validated['transaction_type'],
             'transaction_date' => now()->toDateTimeString(), 
+            'shift_id' => $shift->id,
         ];
 
         Cache::put('transaction_' . $referenceId, $transactionData, now()->addMinutes(5));
@@ -207,9 +223,19 @@ class TransactionController extends Controller
             }
 
             $transaction = DB::transaction(function () use ( $transactionData, $minimumBalance) {
+                $shift = Shift::query()
+                    ->whereKey($transactionData['shift_id'])
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$shift || $shift->status !== 'open') {
+                    throw new \DomainException('The teller shift is closed. Open a shift before initiating transactions.');
+                }
+
                 $new_transaction = Transaction::create([
                     'user_id' => $transactionData['user_id'],
                     'customer_id' => $transactionData['customer_id'],
+                    'shift_id' => $transactionData['shift_id'],
                     'transaction_date' => $transactionData['transaction_date'], 
                     'transaction_type' => $transactionData['transaction_type'],
                     'amount' => $transactionData['amount']
@@ -279,6 +305,17 @@ class TransactionController extends Controller
                 'message' => ucfirst($transactionData['transaction_type']) . ' successful and journal recorded',
             ], 200);
 
+        } catch (\DomainException $e) {
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            LogService::record(
+                ActivityAction::TRANSACTION_FAILED,
+                "Transaction confirmation by {$actor} on Transaction Ref {$validated['reference_id']}. Status: Failed. {$e->getMessage()}"
+            );
+
+            return response()->json([
+                'status' => 'fail',
+                'message' => $e->getMessage(),
+            ], 409);
         } catch (\Exception $e) {
             $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
             LogService::record(
