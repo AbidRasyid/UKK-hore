@@ -13,9 +13,15 @@ class DatabaseSeeder extends Seeder
             majorSeeder::class,
             configurationSeeder::class,
             tellerSeeder::class,
+            CashDenominationSeeder::class,
+            ShiftSeeder::class,
+            ShiftTellerSeeder::class,
             dailyReportSeeder::class,
             transactionSeeder::class,
             accountingJournalSeeder::class,
+            ActivityLogSeeder::class,
+            ChangePinRequestSeeder::class,
+            CashDenominationDailyReportSeeder::class,
         ]);
     }
 }
