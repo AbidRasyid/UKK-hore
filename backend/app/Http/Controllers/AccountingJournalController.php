@@ -9,7 +9,9 @@ class AccountingJournalController extends Controller
 {
     public function index(){
         try {
-            $data = AccountingJournal::orderByDesc('created_at')->get();
+            $data = AccountingJournal::with('transaction:id,transaction_date,transaction_type')
+                ->orderByDesc('created_at')
+                ->get();
             return response()->json([
                 'message' => 'data has been loaded successfully',
                 'data' => $data
