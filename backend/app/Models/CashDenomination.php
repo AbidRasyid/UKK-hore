@@ -10,4 +10,11 @@ class CashDenomination extends Model
         'label',
         'value'
     ];
+
+    public function dailyReports()
+    {
+        return $this->belongsToMany(DailyReport::class, 'cash_denomination_daily_report')
+            ->withPivot('quantity')
+            ->withTimestamps();
+    }
 }
