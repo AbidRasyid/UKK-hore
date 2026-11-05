@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, Printer, RefreshCw } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import api from "../../api/axios";
@@ -8,13 +8,26 @@ import { useLanguage } from "../../hooks/useLanguage";
 
 const getUserId = (user) => user?.id ?? user?.user_id;
 
+const formatReceiptDate = (value, lang) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat(lang === "id" ? "id-ID" : "en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+};
+
 export default function TellerTransactionsPage() {
   const { user } = useOutletContext();
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const [transactions, setTransactions] = useState([]);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [receiptTransaction, setReceiptTransaction] = useState(null);
 
   const fetchTransactions = async () => {
     const tellerId = getUserId(user);
@@ -83,6 +96,27 @@ export default function TellerTransactionsPage() {
     };
   }, [user, t]);
 
+  useEffect(() => {
+    if (!receiptTransaction) return undefined;
+
+    const handleAfterPrint = () => setReceiptTransaction(null);
+    window.addEventListener("afterprint", handleAfterPrint);
+    const timeoutId = window.setTimeout(() => {
+      try {
+        window.print();
+      } catch (error) {
+        console.error("Failed to print transaction receipt", error);
+        setErrorMessage(t("receipt_print_error"));
+        setReceiptTransaction(null);
+      }
+    }, 100);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("afterprint", handleAfterPrint);
+    };
+  }, [receiptTransaction, t]);
+
   const filteredTransactions = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return transactions;
@@ -132,7 +166,7 @@ export default function TellerTransactionsPage() {
           <table className="min-w-full rounded-lg border border-gray-200 bg-white">
             <thead>
               <tr className="bg-gray-100">
-                {[t("no"), t("account_number"), t("transaction"), t("date"), t("amount")].map((heading) => (
+                {[t("no"), t("account_number"), t("transaction"), t("date"), t("amount"), t("actions")].map((heading) => (
                   <th key={heading} className="px-6 py-3 text-left text-sm font-medium text-gray-700">
                     {heading}
                   </th>
@@ -142,13 +176,13 @@ export default function TellerTransactionsPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500">
+                  <td colSpan="6" className="px-6 py-8 text-center text-sm text-gray-500">
                     {t("loading")}
                   </td>
                 </tr>
               ) : filteredTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500">
+                  <td colSpan="6" className="px-6 py-8 text-center text-sm text-gray-500">
                     {t("no_teller_transactions")}
                   </td>
                 </tr>
@@ -168,6 +202,17 @@ export default function TellerTransactionsPage() {
                       <td className={`px-6 py-4 text-right text-sm font-semibold ${isDeposit ? "text-emerald-700" : "text-red-700"}`}>
                         {isDeposit ? "+" : "-"}{formatCurrency(transaction.amount)}
                       </td>
+                      <td className="px-6 py-4">
+                        <button
+                          type="button"
+                          onClick={() => setReceiptTransaction(transaction)}
+                          className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:border-gray-500 hover:text-gray-900"
+                          aria-label={`${t("print_receipt")} ${transaction.account_number || ""}`}
+                        >
+                          <Printer className="h-4 w-4" />
+                          {t("print_receipt")}
+                        </button>
+                      </td>
                     </tr>
                   );
                 })
@@ -176,6 +221,56 @@ export default function TellerTransactionsPage() {
           </table>
         </div>
       </div>
+      {receiptTransaction && (
+        <section id="receipt-print-area" className="receipt-print-area" aria-label={t("receipt")}>
+          <header className="receipt-header">
+            <h1>E-Teller</h1>
+            <p>{t("receipt")}</p>
+            <p className="receipt-confirmed">{t("transaction_confirmed")}</p>
+          </header>
+          <dl className="receipt-details">
+            <div><dt>{t("reference_id")}</dt><dd>{receiptTransaction.reference_id || `TRX-${receiptTransaction.id ?? "-"}`}</dd></div>
+            <div><dt>{t("account_number")}</dt><dd>{receiptTransaction.account_number || "-"}</dd></div>
+            <div><dt>{t("transaction")}</dt><dd>{t(String(receiptTransaction.transaction_type ?? "transaction").toLowerCase())}</dd></div>
+            <div><dt>{t("date")}</dt><dd>{formatReceiptDate(receiptTransaction.transaction_date || receiptTransaction.created_at, lang)}</dd></div>
+            <div><dt>{t("processed_by")}</dt><dd>{user?.fullname || user?.username || "-"}</dd></div>
+          </dl>
+          <div className="receipt-amount">
+            <span>{t("amount")}</span>
+            <strong>{formatCurrency(receiptTransaction.amount)}</strong>
+          </div>
+          <p className="receipt-footer">{t("receipt_thank_you")}</p>
+        </section>
+      )}
+      <style>{`
+        .receipt-print-area { display: none; }
+        @media print {
+          @page { margin: 8mm; }
+          body * { visibility: hidden !important; }
+          #receipt-print-area,
+          #receipt-print-area * { visibility: visible !important; }
+          #receipt-print-area {
+            display: block !important;
+            position: fixed;
+            inset: 0 auto auto 0;
+            width: 72mm;
+            padding: 4mm;
+            color: #111;
+            background: #fff;
+            font: 12px/1.45 Arial, sans-serif;
+          }
+          .receipt-header { text-align: center; padding-bottom: 4mm; border-bottom: 1px dashed #555; }
+          .receipt-header h1 { margin: 0; font-size: 19px; }
+          .receipt-header p { margin: 1mm 0 0; }
+          .receipt-confirmed { font-weight: 700; text-transform: uppercase; }
+          .receipt-details { margin: 4mm 0; }
+          .receipt-details div { display: flex; justify-content: space-between; gap: 4mm; margin: 2mm 0; }
+          .receipt-details dt { color: #444; }
+          .receipt-details dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+          .receipt-amount { display: flex; justify-content: space-between; border-top: 1px dashed #555; padding-top: 3mm; font-size: 14px; }
+          .receipt-footer { margin-top: 6mm; text-align: center; }
+        }
+      `}</style>
     </div>
   );
 }
