@@ -14,7 +14,7 @@ export default function ReportRow({ report = {}, index = 0 }) {
       <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(report.total_deposits)}</td>
       <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(report.total_withdrawals)}</td>
       <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(report.system_balance)}</td>
-      <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(report.physical_balance)}</td>
+      <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(report.closing_balance ?? report.physical_balance)}</td>
       <td className="px-6 py-4 text-sm capitalize text-gray-900">{t(report.status?.toLowerCase()) || report.status}</td>
       <td className="px-6 py-4 text-sm text-gray-900">{report.approved_by ?? ""}</td>
       <td className="px-6 py-4 text-sm text-gray-900 flex gap-2">
