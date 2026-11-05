@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset your PIN</title>
+</head>
+<body style="margin: 0; padding: 24px; background: #f4f5f7; font-family: Arial, sans-serif; color: #171717;">
+    <div style="max-width: 560px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px;">
+        <h1 style="margin: 0 0 16px; font-size: 24px;">Reset your PIN</h1>
+        <p style="margin: 0 0 16px; line-height: 1.6;">
+            Use this one-time code to reset your Bank Mini PIN. It expires in 10 minutes.
+        </p>
+        <p style="margin: 0 0 24px; font-size: 28px; font-weight: bold; letter-spacing: 8px;">
+            {{ $code }}
+        </p>
+        <p style="margin: 0; color: #737373; font-size: 13px; line-height: 1.5;">
+            If you did not request this, you can safely ignore this email.
+        </p>
+    </div>
+</body>
+</html>
