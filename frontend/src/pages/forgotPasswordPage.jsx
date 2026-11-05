@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios.js";
 
 const ForgotPasswordPage = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
@@ -17,9 +18,10 @@ const ForgotPasswordPage = () => {
       const response = await api.post("/api/customer/forgot-password", { email });
       setIsError(false);
       setMessage(response.data.message);
+      navigate(`/reset-password?email=${encodeURIComponent(email)}`);
     } catch (error) {
       setIsError(true);
-      setMessage(error.response?.data?.message || "Unable to send a reset link.");
+      setMessage(error.response?.data?.message || "Unable to send a reset code.");
     } finally {
       setIsLoading(false);
     }
@@ -29,7 +31,7 @@ const ForgotPasswordPage = () => {
     <main className="min-h-screen bg-[#f4f5f7] flex items-center justify-center px-4">
       <form onSubmit={handleSubmit} className="w-full max-w-md rounded-lg border border-neutral-200 bg-white p-8 shadow-sm">
         <h1 className="mb-2 text-2xl font-bold text-neutral-900">Forgot password</h1>
-        <p className="mb-6 text-sm text-neutral-500">Enter your registered email to receive a secure reset link.</p>
+        <p className="mb-6 text-sm text-neutral-500">Enter your registered email to receive a password reset code.</p>
         {message && (
           <div className={`mb-4 rounded-md p-3 text-sm ${isError ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
             {message}
@@ -45,7 +47,7 @@ const ForgotPasswordPage = () => {
           required
         />
         <button type="submit" disabled={isLoading} className="mb-4 h-11 w-full rounded-md bg-black text-sm font-medium text-white hover:bg-neutral-900 disabled:opacity-60">
-          {isLoading ? "Sending..." : "Send Reset Link"}
+          {isLoading ? "Sending..." : "Send Reset Code"}
         </button>
         <Link to="/login" className="block text-center text-sm text-neutral-600 hover:text-black">Back to login</Link>
       </form>
