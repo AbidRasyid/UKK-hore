@@ -163,6 +163,18 @@ export default function ReportDetail() {
               label={t("approved_by")}
               value={report.supervisor ?? t("not_approved")}
             />
+            {report.tellers?.length > 0 && (
+              <div className="sm:col-span-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t("shift_tellers")}</p>
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {report.tellers.map((teller, index) => (
+                    <li key={`${teller}-${index}`} className="border border-gray-200 px-3 py-1.5 text-sm text-gray-700">
+                      {teller}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-6 border-b border-[#e5e7eb] px-6 py-7 sm:grid-cols-2 lg:px-8">
@@ -176,12 +188,26 @@ export default function ReportDetail() {
             <DetailField label={t("system_balance")} value={formatCurrency(report.data.system_balance)} />
             <DetailField label={t("total_deposits")} value={formatCurrency(report.data.total_deposits)} />
             <DetailField label={t("total_withdrawals")} value={formatCurrency(report.data.total_withdrawals)} />
-            <DetailField label={t("physical_balance")} value={formatCurrency(report.data.physical_balance)} />
+            <DetailField label="Closing balance" value={formatCurrency(report.data.closing_balance ?? report.data.physical_balance)} />
             <DetailField
               label={t("balance_difference")}
-              value={formatCurrency(Number(report.data.physical_balance) - Number(report.data.system_balance))}
+              value={formatCurrency(Number(report.data.closing_balance ?? report.data.physical_balance) - Number(report.data.system_balance))}
             />
           </div>
+
+          {report.cash_denominations?.length > 0 && (
+            <div className="border-b border-[#e5e7eb] px-6 py-6 lg:px-8">
+              <h2 className="text-sm font-semibold text-gray-900">Cash denomination count</h2>
+              <ul className="mt-3 space-y-2 text-sm text-gray-600">
+                {report.cash_denominations.map((denomination) => (
+                  <li key={denomination.id} className="flex justify-between gap-4">
+                    <span>{denomination.label}</span>
+                    <span>{denomination.pivot?.quantity ?? 0} × {formatCurrency(denomination.value)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="flex flex-col justify-between gap-4 px-6 py-6 sm:flex-row sm:items-center lg:px-8">
             <div className="flex items-start gap-3 text-sm text-gray-500">
