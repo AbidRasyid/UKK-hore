@@ -8,6 +8,7 @@ class DailyReport extends Model
 {
     protected $fillable = [
         'user_id',
+        'shift_id',
         'report_date',
         'opening_balance',
         'total_deposits',
@@ -15,14 +16,21 @@ class DailyReport extends Model
         'system_balance',
         'physical_balance',
         'status',
-        'approved_by'
+        'approved_by',
     ];
 
-    public function user(){
+    public function user()
+    {
         return $this->belongsTo(User::class);
     }
 
-    public function transaction(){
+    public function shift()
+    {
+        return $this->belongsTo(Shift::class);
+    }
+
+    public function transaction()
+    {
         return $this->hasMany(Transaction::class);
     }
 }
