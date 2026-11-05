@@ -4,11 +4,13 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ChangePinController;
 use App\Http\Controllers\CustomerPasswordResetController;
+use App\Http\Controllers\CustomerPinResetController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use App\enum\UserRole;
 use App\Http\Controllers\AccountingJournalController;
 use App\Http\Controllers\DailyReportController;
+use App\Http\Controllers\ShiftController;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
@@ -22,7 +24,12 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/customer/login', [AuthController::class, 'CustomerLogin']);
 Route::post('/customer/forgot-password', [CustomerPasswordResetController::class, 'forgot'])
     ->middleware('throttle:forgot-password');
-Route::post('/customer/reset-password', [CustomerPasswordResetController::class, 'reset']);
+Route::post('/customer/reset-password', [CustomerPasswordResetController::class, 'reset'])
+    ->middleware('throttle:5,1');
+Route::post('/customer/forgot-pin', [CustomerPinResetController::class, 'requestCode'])
+    ->middleware('throttle:forgot-password');
+Route::post('/customer/reset-pin', [CustomerPinResetController::class, 'reset'])
+    ->middleware('throttle:5,1');
 Route::middleware('auth:sanctum')->get('/me', function (\Illuminate\Http\Request $request) {
     return response()->json($request->user());
 });
@@ -68,10 +75,11 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::SUPERVISOR->value])->group
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::TELLER->value])->group(function(){
+    Route::get('/teller/shift', [ShiftController::class, 'current']);
+    Route::post('/teller/shift/open', [ShiftController::class, 'open']);
+    Route::post('/teller/shift/{shiftId}/close', [ShiftController::class, 'close']);
     Route::post('/user/{customer_id}/transaction/initiate', [TransactionController::class, 'initiate']);
     Route::get('/teller/customer/{customer_id}/transactions', [TransactionController::class, 'show']);
-    Route::get('/daily-report/{user_id}/initiate', [DailyReportController::class, 'initiateStore']);
-    Route::post('/daily-report/{user_id}/store', [DailyReportController::class, 'store']);
     Route::get('/daily-reports/{user_id}', [DailyReportController::class, 'tellerIndex']);
     Route::get('/transactions/{teller_id}', [TransactionController::class, 'teller_daily_show']);
 
