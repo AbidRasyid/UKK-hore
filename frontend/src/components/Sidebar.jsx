@@ -5,6 +5,7 @@ import { getFilteredMenuItems } from '../config/sidebarConfig';
 import { useOutletContext } from 'react-router-dom';
 import { purgeBrowserStorageCredentials } from '../utils/cookies';
 import { useLanguage } from '../hooks/useLanguage';
+import api from '../api/axios';
 
 /**
  * Sidebar navigation component matching the Aside - SideNavBar design.
@@ -15,7 +16,7 @@ import { useLanguage } from '../hooks/useLanguage';
  * - terminalId: Optional terminal label, default 'Terminal #042'
  * - onLogout: Optional callback when clicking Logout.
  */
-export default function Sidebar({ terminalId = 'Terminal #042', onLogout }) {
+export default function Sidebar({ terminalId = 'Terminal #042'}) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useOutletContext();
@@ -30,14 +31,16 @@ export default function Sidebar({ terminalId = 'Terminal #042', onLogout }) {
   // - teller: only dashboard, accounts, and report
   const visibleItems = getFilteredMenuItems(currentRole);
 
-  const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-      return;
+  const handleLogout = async () => {
+    try{
+      await api.post('/api/logout');
+    }catch{
+      console.error("server logout failed")
+    }finally{
+      purgeBrowserStorageCredentials();
+      navigate('/login');
     }
 
-    purgeBrowserStorageCredentials();
-    navigate('/login');
   };
 
   return (
