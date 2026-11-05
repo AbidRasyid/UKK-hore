@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\enum\Majors;
 use App\enum\Status;
 use App\enum\UserRole;
 use App\Models\Customer;
@@ -36,21 +37,20 @@ class userSeeder extends Seeder
                 'account_number' => '2617756',
                 'student_id' => '17756',
                 'student_name' => 'Budi Santoso',
-                'student_class' => '12 RPL 1',
+                'student_class' => Majors::RPL->value,
                 'balance' => 13000,
             ],
             [
                 'account_number' => '2617757',
                 'student_id' => '17757',
                 'student_name' => 'Siti Aminah',
-                'student_class' => '12 TKJ 1',
+                'student_class' => Majors::TKJ->value,
                 'balance' => 13000,
             ],
         ] as $customer) {
             Customer::updateOrCreate(
                 ['student_id' => $customer['student_id']],
                 $customer + [
-                    'password' => '234345',
                     'pin' => '123456',
                     'status' => Status::ACTIVE->value,
                 ],
