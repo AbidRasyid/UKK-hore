@@ -51,6 +51,7 @@ class userSeeder extends Seeder
             Customer::updateOrCreate(
                 ['student_id' => $customer['student_id']],
                 $customer + [
+                    'password' => '234345',
                     'pin' => '123456',
                     'status' => Status::ACTIVE->value,
                 ],
