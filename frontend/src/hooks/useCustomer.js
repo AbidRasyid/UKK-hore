@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../api/axios";
 import { executeToogleStatus } from "../utils/toogleStatus";
 import { useLanguage } from "./useLanguage";
+import { MAJORS, normalizeMajor } from "../utils/majors";
 
 export const useCustomers = () => {
   const { t } = useLanguage();
@@ -68,14 +69,25 @@ export const useCustomers = () => {
 
   // 4. Fungsi Simpan Banyak Data (Bulk Submit dari Modal)
   const handleBulkSubmit = async (customerRows, closeModal) => {
-    const rows = customerRows.map((row) =>
-      Object.fromEntries(
+    const rows = customerRows.map((row) => {
+      const trimmedRow = Object.fromEntries(
         Object.entries(row).map(([field, value]) => [field, value.trim()])
-      )
-    );
+      );
+      return {
+        ...trimmedRow,
+        email: trimmedRow.email || null,
+        student_class: normalizeMajor(trimmedRow.student_class),
+      };
+    });
 
-    if (rows.some((row) => Object.values(row).some((value) => !value))) {
+    const requiredFields = ["student_name", "student_id", "student_class", "password", "pin"];
+    if (rows.some((row) => requiredFields.some((field) => !row[field]))) {
       alert(t("fill_every_customer_field"));
+      return;
+    }
+
+    if (rows.some((row) => !MAJORS.includes(normalizeMajor(row.student_class)))) {
+      alert(t("select_major"));
       return;
     }
 
