@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class Shift extends Model
 {
     protected $fillable = [
-    'teller_id',
     'opening_balance',
     'closing_balance',
     'opened_at',
@@ -15,7 +14,27 @@ class Shift extends Model
     'status'
     ];
 
-    public function teller(){
-        return $this->belongsTo(Teller::class);
+    protected function casts(): array
+    {
+        return [
+            'opened_at' => 'datetime',
+            'closed_at' => 'datetime',
+        ];
+    }
+
+    public function tellers()
+    {
+        return $this->belongsToMany(Teller::class, 'shift_teller')
+            ->withTimestamps();
+    }
+
+    public function dailyReport()
+    {
+        return $this->hasOne(DailyReport::class);
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
     }
 }
