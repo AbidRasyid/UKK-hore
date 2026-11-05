@@ -16,6 +16,7 @@ class Transaction extends Model
         'customer_id',
         'user_id', 
         'daily_report_id',
+        'shift_id',
         'transaction_date',
         'transaction_type',
         'amount'
@@ -35,5 +36,9 @@ class Transaction extends Model
 
     public function daily_report(){
         return $this->belongsTo(DailyReport::class);
+    }
+
+    public function shift(){
+        return $this->belongsTo(Shift::class);
     }
 }
