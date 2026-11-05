@@ -240,27 +240,38 @@ Fitur penting:
 - jurnal akuntansi dibuat otomatis untuk tiap transaksi
 - validasi amount > 0
 
-### 5. Laporan harian
+### 5. Shift teller dan laporan harian
 
-Teller dapat mengambil ringkasan transaksi yang belum masuk laporan, lalu menyimpan laporan harian. Supervisor dapat melihat dan menyetujui laporan.
+Teller harus membuka shift sebelum memproses transaksi. Saat shift ditutup, sistem menghitung saldo sistem dari saldo awal dan transaksi shift, lalu membuat laporan harian untuk ditinjau supervisor. `teller_id` pada permintaan buka shift adalah ID profil teller dan relasinya disimpan pada tabel pivot `shift_teller`.
 
 ```http
-POST /api/daily-report/{user_id}/initiate
-POST /api/daily-report/{user_id}/store
+GET /api/teller/shift
+POST /api/teller/shift/open
+POST /api/teller/shift/{shift_id}/close
 GET /api/daily-reports
 GET /api/daily-report/{id}
 PATCH /api/daily-report/{id}/approve
 ```
 
-Body saat menyimpan laporan harian:
+Body saat membuka shift:
 
 ```json
 {
   "opening_balance": 1000000,
+  "teller_id": 1
+}
+```
+
+Body saat menutup shift:
+
+```json
+{
+  "closing_balance": 1300000,
   "system_balance": 1300000,
-  "total_deposits": 500000,
-  "total_withdrawals": 200000,
-  "physical_balance": 1300000
+  "cash_denominations": [
+    { "cash_denomination_id": 1, "quantity": 10 },
+    { "cash_denomination_id": 2, "quantity": 5 }
+  ]
 }
 ```
 
