@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\ResetPasswordMail;
+use App\Mail\ResetCustomerPasswordCodeMail;
 use App\Models\Customer;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Laravel\Reverb\Loggers\Log;
 
 class CustomerPasswordResetController extends Controller
 {
@@ -22,30 +22,23 @@ class CustomerPasswordResetController extends Controller
         $customer = Customer::whereRaw('LOWER(email) = ?', [$email], 'and')->first();
 
         if ($customer) {
-            Log::info("Customer has founded" . $customer->email);
-            $token = Str::random(60);
+            $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
             DB::table('password_reset_tokens')->updateOrInsert(
                 ['email' => $email],
                 [
-                    'token' => hash('sha256', $token),
+                    'token' => Hash::make($code),
+                    'attempts' => 0,
                     'created_at' => now(),
                 ],
             );
 
-            $resetUrl = rtrim((string) config('app.frontend_url'), '/')
-                . '/reset-password?token=' . urlencode($token)
-                . '&email=' . urlencode($email);
-
-            Mail::to($email)->send(new ResetPasswordMail($resetUrl));
-
-            Log::info("Email terkirim ke: " . $email);
-        }else{
-            Log::warning("Nasabah dengan email" . $email . "Tidak ditemukan");
+            Mail::to($customer->email)->send(new ResetCustomerPasswordCodeMail($code));
+            Log::info("Password reset code submitted to SMTP for customer ID [{$customer->id}].");
         }
 
         return response()->json([
-            'message' => 'If that email is registered, a password reset link has been sent.',
+            'message' => 'If that email is registered, a password reset code has been sent.',
         ]);
     }
 
@@ -53,34 +46,61 @@ class CustomerPasswordResetController extends Controller
     {
         $validated = $request->validate([
             'email' => ['required', 'email'],
-            'token' => ['required', 'string', 'size:60'],
+            'token' => ['required', 'digits:6'],
             'new_password' => ['required', 'string', 'min:8'],
         ]);
 
         $email = Str::lower($validated['email']);
-        $tokenRecord = DB::table('password_reset_tokens')->where('email', $email)->first();
+        $tokenRecord = DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->first();
+
+        if (!$tokenRecord) {
+            return $this->invalidCodeResponse();
+        }
 
         if (
-            !$tokenRecord
-            || !hash_equals($tokenRecord->token, hash('sha256', $validated['token']))
-            || Carbon::parse($tokenRecord->created_at)->addMinutes(15)->isPast()
+            Carbon::parse($tokenRecord->created_at)->addMinutes(10)->isPast()
+            || $tokenRecord->attempts >= 5
         ) {
-            return response()->json([
-                'message' => 'This password reset link is invalid or has expired.',
-            ], 422);
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+            return $this->invalidCodeResponse();
         }
 
-        $customer = Customer::whereRaw('LOWER(email) = ?', [$email], "and")->first();
+        if (!Hash::check($validated['token'], $tokenRecord->token)) {
+            $attempts = $tokenRecord->attempts + 1;
+            if ($attempts >= 5) {
+                DB::table('password_reset_tokens')->where('email', $email)->delete();
+            } else {
+                DB::table('password_reset_tokens')
+                    ->where('email', $email)
+                    ->update(['attempts' => $attempts]);
+            }
+
+            return $this->invalidCodeResponse();
+        }
+
+        $customer = Customer::whereRaw('LOWER(email) = ?', [$email], 'and')->first();
         if (!$customer) {
-            return response()->json([
-                'message' => 'This password reset link is invalid or has expired.',
-            ], 422);
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+            return $this->invalidCodeResponse();
         }
 
-        $customer->update(['password' => $validated['new_password']]);
-        DB::table('password_reset_tokens')->where('email', $email)->delete();
+        DB::transaction(function () use ($customer, $validated, $email): void {
+            $customer->update(['password' => $validated['new_password']]);
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+        });
 
         return response()->json(['message' => 'Password reset successfully.']);
+    }
+
+    private function invalidCodeResponse(): JsonResponse
+    {
+        return response()->json([
+            'message' => 'The password reset code is invalid or has expired.',
+        ], 422);
     }
 
     public function change(Request $request): JsonResponse
@@ -91,7 +111,7 @@ class CustomerPasswordResetController extends Controller
         ]);
 
         $customer = $request->user('customer');
-        if (!$customer || !Hash::check($validated['current_password'], $customer->password)) {
+        if (!$customer || !$customer->password || !Hash::check($validated['current_password'], $customer->password)) {
             return response()->json(['message' => 'Current password is incorrect.'], 422);
         }
 
