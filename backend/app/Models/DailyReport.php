@@ -11,6 +11,7 @@ class DailyReport extends Model
         'shift_id',
         'report_date',
         'opening_balance',
+        'closing_balance',
         'total_deposits',
         'total_withdrawals',
         'system_balance',
@@ -32,5 +33,12 @@ class DailyReport extends Model
     public function transaction()
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    public function cashDenominations()
+    {
+        return $this->belongsToMany(CashDenomination::class, 'cash_denomination_daily_report')
+            ->withPivot('quantity')
+            ->withTimestamps();
     }
 }
