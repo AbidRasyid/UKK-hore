@@ -15,17 +15,20 @@ class ShiftSeeder extends Seeder
         $tellerUser = User::where('username', 'teller')->firstOrFail();
         $teller = Teller::where('user_id', $tellerUser->id)->firstOrFail();
 
-        Shift::updateOrCreate(
-            [
-                'teller_id' => $teller->id,
-                'opened_at' => today()->startOfDay(),
-            ],
-            [
+        $shift = $teller->shifts()
+            ->whereDate('opened_at', today())
+            ->first();
+
+        if (! $shift) {
+            $shift = Shift::create([
                 'opening_balance' => 10000,
                 'closing_balance' => null,
+                'opened_at' => today()->startOfDay(),
                 'closed_at' => null,
                 'status' => ShiftStatus::OPEN->value,
-            ],
-        );
+            ]);
+        }
+
+        $shift->tellers()->syncWithoutDetaching([$teller->id]);
     }
 }
