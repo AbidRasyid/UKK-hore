@@ -21,6 +21,7 @@ export default function CustomerTransactionPage() {
   const { t } = useLanguage();
   const [customer, setCustomer] = useState(state?.customer ?? null);
   const [transactions, setTransactions] = useState([]);
+  const [hasOpenShift, setHasOpenShift] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [transactionType, setTransactionType] = useState(null);
@@ -34,13 +35,14 @@ export default function CustomerTransactionPage() {
       try {
         const requests = [
           api.get(`/api/teller/customer/${customer_id}/transactions`),
+          api.get("/api/teller/shift"),
         ];
 
         if (!state?.customer) {
           requests.push(api.get(`/api/customer/${customer_id}`));
         }
 
-        const [transactionResponse, customerResponse] = await Promise.all(requests);
+        const [transactionResponse, shiftResponse, customerResponse] = await Promise.all(requests);
         const transactionData = transactionResponse.data?.data;
 
         if (!Array.isArray(transactionData)) {
@@ -49,6 +51,7 @@ export default function CustomerTransactionPage() {
 
         if (isMounted) {
           setTransactions(transactionData);
+          setHasOpenShift(Boolean(shiftResponse.data?.data));
           if (customerResponse) {
             setCustomer(customerResponse.data?.data ?? null);
           }
@@ -155,7 +158,7 @@ export default function CustomerTransactionPage() {
               <Detail label={t("primary_account")} value={customer.account_number || "-"} />
               <Detail label={t("account_type")} value={t("customer_account")} />
               <Detail label={t("student_id")} value={customer.student_id || "-"} />
-              <Detail label={t("class")} value={customer.student_class || "-"} />
+              <Detail label={t("major")} value={customer.student_class?.toUpperCase() || "-"} />
             </div>
           </section>
 
@@ -171,15 +174,17 @@ export default function CustomerTransactionPage() {
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
+                disabled={!hasOpenShift}
                 onClick={() => setTransactionType("deposit")}
-                className="inline-flex h-10 items-center justify-center gap-2 bg-emerald-600 text-sm font-medium text-white hover:bg-emerald-700"
+                className="inline-flex h-10 items-center justify-center gap-2 bg-emerald-600 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ArrowDown className="h-4 w-4" /> {t("deposit")}
               </button>
               <button
                 type="button"
+                disabled={!hasOpenShift}
                 onClick={() => setTransactionType("withdrawal")}
-                className="inline-flex h-10 items-center justify-center gap-2 bg-black text-sm font-medium text-white hover:bg-gray-800"
+                className="inline-flex h-10 items-center justify-center gap-2 bg-black text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ArrowUp className="h-4 w-4" /> {t("withdrawal")}
               </button>
@@ -190,6 +195,13 @@ export default function CustomerTransactionPage() {
         {errorMessage ? (
           <p className="mt-6 bg-red-950 px-5 py-4 text-sm text-red-300">{errorMessage}</p>
         ) : (
+          <>
+          {!hasOpenShift && (
+            <section className="mt-6 border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+              <p>Open a teller shift before processing deposits or withdrawals.</p>
+              <Link to="/" className="mt-2 inline-block font-semibold underline">Open shift</Link>
+            </section>
+          )}
           <section className="mt-6 overflow-hidden bg-white text-gray-900">
             <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
               <h2 className="text-lg font-semibold">{t("recent_transactions")}</h2>
@@ -232,6 +244,7 @@ export default function CustomerTransactionPage() {
               </table>
             </div>
           </section>
+          </>
         )}
       </main>
 
