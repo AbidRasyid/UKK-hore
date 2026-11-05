@@ -7,11 +7,14 @@ import CustomerRow from "../../components/accounts/accountRow";
 import * as XLSX from "xlsx";
 import { useCustomers } from "../../hooks/useCustomer";
 import { useLanguage } from "../../hooks/useLanguage";
+import SearchableMajorSelect from "../../components/accounts/SearchableMajorSelect";
+import { normalizeMajor } from "../../utils/majors";
 
 const normalize = (value) => String(value ?? "").toLowerCase().trim();
 
 const createEmptyCustomer = () => ({
   student_name: "",
+  email: "",
   student_id: "",
   student_class: "",
   password: "",
@@ -82,7 +85,7 @@ const {
       return;
     }
 
-    const headers = ["ID", "Name", "Account number", "Student ID", "Class", "Status"];
+    const headers = ["ID", "Name", "Account number", "Student ID", "Major", "Status"];
     const rows = filteredCustomers.map((customer, index) => [
       index + 1,
       customer.student_name || "",
@@ -117,19 +120,42 @@ const {
       const headerMap = {
         name: "student_name",
         fullname: "student_name",
+        studentfullname: "student_name",
+        namalengkap: "student_name",
+        nama: "student_name",
+        namasiswa: "student_name",
         studentname: "student_name",
+        email: "email",
         studentid: "student_id",
+        nis: "student_id",
+        nomorinduksiswa: "student_id",
         class: "student_class",
+        kelas: "student_class",
+        major: "student_class",
+        jurusan: "student_class",
         studentclass: "student_class",
         password: "password",
+        katasandi: "password",
         pin: "pin",
       };
 
       const rows = importedRows.map((importedRow) => {
         const row = createEmptyCustomer();
+        let nameHeaderPriority = 0;
         Object.entries(importedRow).forEach(([header, value]) => {
-          const field = headerMap[normalize(header).replace(/[\s_-]/g, "")];
-          if (field) row[field] = String(value).trim();
+          const normalizedHeader = normalize(header).replace(/[\s_-]/g, "");
+          const field = headerMap[normalizedHeader];
+          if (field) {
+            if (field === "student_name") {
+              const priority = ["fullname", "namalengkap", "studentfullname"].includes(normalizedHeader) ? 2 : 1;
+              if (priority < nameHeaderPriority) return;
+              nameHeaderPriority = priority;
+            }
+            row[field] =
+              field === "student_class"
+                ? normalizeMajor(value)
+                : String(value).trim();
+          }
         });
         return row;
       });
@@ -139,11 +165,12 @@ const {
         return;
       }
 
-      const missingFields = Object.keys(createEmptyCustomer()).filter((field) =>
+      const requiredFields = ["student_name", "student_id", "student_class", "password", "pin"];
+      const missingRequiredFields = requiredFields.filter((field) =>
         rows.some((row) => !row[field])
       );
-      if (missingFields.length) {
-        alert(`${t("missing_imported_values")} ${missingFields.join(", ")}`);
+      if (missingRequiredFields.length) {
+        alert(`${t("missing_imported_values")} ${missingRequiredFields.join(", ")}`);
         return;
       }
 
@@ -174,14 +201,15 @@ const {
       />
 
       <div className="p-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t("accounts")}</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              {t("manage_accounts")}
-            </p>
-          </div>
-          <div className="flex gap-3">
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{t("accounts")}</h1>
+              <p className="mt-2 text-sm text-gray-600">
+                {t("manage_accounts")}
+              </p>
+            </div>
+            <div className="flex gap-3">
             <input
               ref={fileInputRef}
               type="file"
@@ -213,14 +241,16 @@ const {
               <Plus className="h-4 w-4" />
               {t("add_customers")}
             </button>
+            </div>
           </div>
+          <p className="mt-3 text-xs text-gray-500">{t("bulk_customer_help")}</p>
         </div>
 
         <div className="overflow-x-auto">
           <table className="min-w-full rounded-lg border border-gray-200 bg-white">
             <thead>
               <tr className="bg-gray-100">
-                {[t("no"), t("name"), t("account_number"), t("student_id"), t("class"), t("status"), t("actions")].map((heading) => (
+                {[t("no"), t("name"), t("account_number"), t("student_id"), t("major"), t("status"), t("actions")].map((heading) => (
                   <th key={heading} className="px-6 py-3 text-left text-sm font-medium text-gray-700">{heading}</th>
                 ))}
               </tr>
@@ -270,7 +300,13 @@ const {
               </button>
             </div>
 
-            <form onSubmit={handleBulkSubmit} className="p-6">
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleBulkSubmit(customerRows, closeBulkForm);
+              }}
+              className="p-6"
+            >
               <div className="space-y-4">
                 {customerRows.map((row, index) => (
                   <div key={index} className="rounded-md border border-gray-200 p-4">
@@ -285,27 +321,37 @@ const {
                         {t("remove")}
                       </button>
                     </div>
-                    <div className="grid gap-3 md:grid-cols-5">
+                    <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
                       {[
                         ["student_name", t("name"), t("full_name")],
+                        ["email", t("email"), t("email")],
                         ["student_id", t("student_id"), t("student_id")],
-                        ["student_class", t("class"), t("class")],
+                        ["student_class", t("major"), t("search_major")],
                         ["password", t("password"), t("password")],
                         ["pin", t("pin"), t("pin")],
                       ].map(([field, label, placeholder]) => (
                         <label key={field} className="block">
                           <span className="mb-1.5 block text-xs font-semibold text-gray-600">{label}</span>
-                          <input
-                            type={field === "pin" ? "password" : "text"}
-                            inputMode={field === "pin" ? "numeric" : undefined}
-                            minLength={field === "pin" ? 6 : undefined}
-                            maxLength={field === "pin" ? 6 : undefined}
-                            pattern={field === "pin" ? "\\d{6}" : undefined}
-                            value={row[field]}
-                            onChange={(event) => updateCustomerRow(index, field, event.target.value)}
-                            placeholder={placeholder}
-                            className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
-                          />
+                          {field === "student_class" ? (
+                            <SearchableMajorSelect
+                              id={`customer-major-${index}`}
+                              value={row[field]}
+                              onChange={(value) => updateCustomerRow(index, field, value)}
+                              placeholder={placeholder}
+                            />
+                          ) : (
+                            <input
+                              type={field === "pin" ? "password" : field === "email" ? "email" : "text"}
+                              inputMode={field === "pin" ? "numeric" : undefined}
+                              minLength={field === "pin" ? 6 : undefined}
+                              maxLength={field === "pin" ? 6 : undefined}
+                              pattern={field === "pin" ? "\\d{6}" : undefined}
+                              value={row[field]}
+                              onChange={(event) => updateCustomerRow(index, field, event.target.value)}
+                              placeholder={placeholder}
+                              className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm outline-none focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
+                            />
+                          )}
                         </label>
                       ))}
                     </div>
