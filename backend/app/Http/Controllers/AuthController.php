@@ -92,7 +92,7 @@ class AuthController extends Controller
 
             $customer = Customer::query()->where('student_id', '=', $validated['student_id'])->first();
 
-            if ((! $customer || ! Hash::check($validated['password'], $customer->password))) {
+            if (!$customer || !$customer->password || !Hash::check($validated['password'], $customer->password)) {
                 LogService::record(
                     ActivityAction::LOGIN_FAILED,
                     "Customer login failed for student ID [{$validated['student_id']}]. Reason: invalid credentials.",
