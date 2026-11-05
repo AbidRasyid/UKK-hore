@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\enum\ActivityAction;
+use App\enum\Majors;
+use App\enum\MajorsInit;
 use App\Models\Customer;
 use App\Services\LogService;
 use App\enum\Status;
@@ -41,7 +43,7 @@ class CustomerController extends Controller
                 "student_name" => ['required', 'string'],
                 "email" => ['nullable', 'email', 'unique:customers,email'],
                 "student_id" => ['required', 'string'],
-                "student_class" => ['required', 'string'],
+                "student_class" => ['required', Rule::enum(Majors::class)],
                 "password" => ['required', 'string'],
                 "pin" => ['required', 'digits:6']
             ]);
@@ -49,10 +51,24 @@ class CustomerController extends Controller
             $now = Carbon::now();
 
             $academic_year = $now->month >= 7 ? $now->year : $now->year - 1;
+            $major = Majors::from($validated['student_class']);
+            $majorCode = match ($major) {
+                Majors::RPL => MajorsInit::RPL->value,
+                Majors::TKJ => MajorsInit::TKJ->value,
+                Majors::DKV => MajorsInit::DKV->value,
+                Majors::MP => MajorsInit::MP->value,
+                Majors::AK => MajorsInit::AK->value,
+                Majors::BR => MajorsInit::BR->value,
+                Majors::BD => MajorsInit::BD->value,
+                Majors::LPS => MajorsInit::LPS->value,
+            };
 
                 $customer = Customer::create([
                     'student_id' => $validated['student_id'],
-                    'account_number' => $academic_year . $validated['student_id'],
+                    'account_number' => substr((string) $academic_year, -2)
+                        . '0'
+                        . $majorCode
+                        . $validated['student_id'],
                     'student_name' => $validated['student_name'],
                     'email' => $validated['email'] ?? null,
                     'student_class' => $validated['student_class'],
