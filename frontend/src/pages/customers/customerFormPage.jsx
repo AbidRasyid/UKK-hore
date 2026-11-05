@@ -3,6 +3,8 @@ import { ArrowLeft, Check, KeyRound, LockKeyhole, UserRound } from "lucide-react
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../../api/axios";
 import { useLanguage } from "../../hooks/useLanguage";
+import SearchableMajorSelect from "../../components/accounts/SearchableMajorSelect";
+import { MAJORS, normalizeMajor } from "../../utils/majors";
 
 export default function CustomerFormPage() {
   const { customer_id } = useParams();
@@ -54,7 +56,7 @@ export default function CustomerFormPage() {
       student_name: studentName.trim(),
       email: email.trim() || null,
       student_id: studentId.trim(),
-      student_class: studentClass.trim(),
+      student_class: normalizeMajor(studentClass),
       password: password.trim(),
       pin: pin.trim(),
       status,
@@ -64,6 +66,11 @@ export default function CustomerFormPage() {
 
     if (!payload.student_name || !payload.student_id || !payload.student_class) {
       alert(t("err_name_id_class_required"));
+      return;
+    }
+
+    if (!MAJORS.includes(payload.student_class)) {
+      alert(t("select_major"));
       return;
     }
 
@@ -205,15 +212,14 @@ export default function CustomerFormPage() {
 
               <label className="block">
                 <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  {t("class")}
+                  {t("major")}
                 </span>
-                <input
-                  type="text"
+                <SearchableMajorSelect
+                  id="student-major"
                   value={studentClass}
-                  onChange={(event) => setStudentClass(event.target.value)}
-                  placeholder={t("enter_class")}
+                  onChange={setStudentClass}
+                  placeholder={t("search_major")}
                   required
-                  className="h-11 w-full rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
                 />
               </label>
             </div>
