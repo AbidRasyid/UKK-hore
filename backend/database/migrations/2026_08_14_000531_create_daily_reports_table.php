@@ -17,8 +17,12 @@
                 $table->foreignId('user_id')
                     ->constrained()
                     ->restrictOnDelete();
-                $table->date('report_date')->unique();
-                $table->unsignedBigInteger('opening_balance')->default(0);
+                $table->foreignId('shift_id')
+                    ->nullable()
+                    ->constrained('shifts')
+                    ->nullOnDelete();
+                $table->date('report_date'); 
+                $table->unsignedBigInteger('opening_balance')->default(0); 
                 $table->unsignedBigInteger('total_deposits')->default(0);
                 $table->unsignedBigInteger('total_withdrawals')->default(0);
                 $table->unsignedBigInteger('system_balance')->default(0);
@@ -27,13 +31,6 @@
                 $table->foreignId('approved_by')->nullable()->constrained('users')->restrictOnDelete()->default(null);
                 $table->timestamps();
             });
-
-            Schema::table('transactions', function (Blueprint $table) {
-                $table->foreign('daily_report_id')
-                    ->references('id')
-                    ->on('daily_reports')
-                    ->restrictOnDelete();
-            });
         }
 
         /**
@@ -41,10 +38,6 @@
          */
         public function down(): void
         {
-            Schema::table('transactions', function (Blueprint $table) {
-                $table->dropForeign(['daily_report_id']);
-            });
-
             Schema::dropIfExists('daily_reports');
         }
     };
