@@ -86,7 +86,8 @@ export default function JournalsPage() {
         journal.account_code,
         journal.position,
         journal.amount,
-        journal.created_at,
+        journal.transaction?.transaction_type,
+        journal.transaction?.transaction_date,
       ].some((value) => normalize(value).includes(query))
     );
   }, [journals, search]);
@@ -143,51 +144,61 @@ export default function JournalsPage() {
               <table className="min-w-225 w-full">
                 <thead>
                   <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa]">
-                    {[t("no"), t("journal_id"), t("transaction_id"), t("account_code"), t("position"), t("amount"), t("date")].map(
-                      (heading) => (
+                    {[
+                      { label: t("date"), align: "text-left" },
+                      { label: t("account_code"), align: "text-left" },
+                      { label: t("transaction_type"), align: "text-left" },
+                      { label: t("debit"), align: "text-right" },
+                      { label: t("credit"), align: "text-right" },
+                    ].map(({ label, align }) => (
                         <th
-                          key={heading}
-                          className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
+                          key={label}
+                          className={`px-6 py-3 ${align} text-xs font-semibold uppercase tracking-wide text-gray-500`}
                         >
-                          {heading}
+                          {label}
                         </th>
-                      )
-                    )}
+                      ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e5e7eb]">
                   {isLoading ? (
                     <tr>
-                      <td colSpan="7" className="px-6 py-10 text-center text-sm text-gray-500">
+                      <td colSpan="5" className="px-6 py-10 text-center text-sm text-gray-500">
                         {t("loading")}
                       </td>
                     </tr>
                   ) : filteredJournals.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="px-6 py-10 text-center text-sm text-gray-500">
+                      <td colSpan="5" className="px-6 py-10 text-center text-sm text-gray-500">
                         {t("no_journals")}
                       </td>
                     </tr>
                   ) : (
-                    filteredJournals.map((journal, index) => (
-                      <tr key={journal.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 text-sm text-gray-900">{index + 1}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{journal.id}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{journal.transaction_id}</td>
-                        <td className="px-6 py-4 font-mono text-sm text-gray-900">
-                          {journal.account_code}
-                        </td>
-                        <td className="px-6 py-4 text-sm capitalize text-gray-900">
-                          {t(journal.position?.toLowerCase()) || journal.position}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {formatCurrency(journal.amount)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {formatDate(journal.created_at)}
-                        </td>
-                      </tr>
-                    ))
+                    filteredJournals.map((journal) => {
+                      const position = normalize(journal.position);
+
+                      return (
+                        <tr key={journal.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {formatDate(journal.transaction?.transaction_date ?? journal.created_at)}
+                          </td>
+                          <td className="px-6 py-4 font-mono text-sm text-gray-900">
+                            {journal.account_code}
+                          </td>
+                          <td className="px-6 py-4 text-sm capitalize text-gray-900">
+                            {t(normalize(journal.transaction?.transaction_type)) ||
+                              journal.transaction?.transaction_type ||
+                              "-"}
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm text-gray-900">
+                            {position === "debit" ? formatCurrency(journal.amount) : ""}
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm text-gray-900">
+                            {position === "credit" ? formatCurrency(journal.amount) : ""}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
