@@ -15,18 +15,23 @@ class DailyReportSeeder extends Seeder
     {
         $teller = User::where('username', 'teller')->firstOrFail();
         $tellerProfile = Teller::where('user_id', $teller->id)->firstOrFail();
-        $shift = Shift::where('teller_id', $tellerProfile->id)
+        $shift = Shift::whereHas('tellers', fn ($query) => $query->whereKey($tellerProfile->id))
             ->whereDate('opened_at', today())
             ->firstOrFail();
 
+        $shift->update([
+            'closing_balance' => 16000,
+            'closed_at' => now(),
+            'status' => \App\enum\ShiftStatus::CLOSED->value,
+        ]);
+
         DailyReport::updateOrCreate(
+            ['shift_id' => $shift->id],
             [
                 'report_date' => today()->toDateString(),
                 'user_id' => $teller->id,
-            ],
-            [
-                'shift_id' => $shift->id,
                 'opening_balance' => 10000,
+                'closing_balance' => 16000,
                 'total_deposits' => 8000,
                 'total_withdrawals' => 2000,
                 'system_balance' => 16000,
