@@ -17,10 +17,6 @@
                 $table->foreignId('user_id')
                     ->constrained()
                     ->restrictOnDelete();
-                $table->foreignId('shift_id')
-                    ->nullable()
-                    ->constrained('shifts')
-                    ->nullOnDelete();
                 $table->date('report_date'); 
                 $table->unsignedBigInteger('opening_balance')->default(0); 
                 $table->unsignedBigInteger('total_deposits')->default(0);
