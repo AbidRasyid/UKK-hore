@@ -13,45 +13,11 @@ use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
-use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Laravel\Firebase\Facades\Firebase;
 
-Route::post('/test-fcm', function (Request $request) {
-    $token = $request->input('token');
-    $title = $request->input('title', 'Test Notifikasi');
-    $body = $request->input('body', 'Halo dari Laravel!');
-
-    try {
-        // Panggil messaging service
-        $messaging = app('firebase.messaging');
-
-        // Bikin message pakai array (INI YANG PALING AMAN)
-        $message = CloudMessage::fromArray([
-            'token' => $token, // Target token langsung di sini
-            'notification' => [
-                'title' => $title,
-                'body' => $body,
-            ],
-            'android' => [
-                'priority' => 'high',
-            ],
-        ]);
-
-        // Kirim!
-        $messaging->send($message);
-
-        return response()->json([
-            "message" => "Notifikasi berhasil dikirim!"
-        ], 200);
-    } catch (\Throwable $e) {
-        return response()->json([
-            "message" => "Gagal mengirim notifikasi",
-            "error" => $e->getMessage()
-        ], 500);
-    }
-});
 
 Broadcast::routes(['middleware' => ['auth:sanctum']]);
+Route::post('/logout', [AuthController::class, 'logout']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/customer/login', [AuthController::class, 'CustomerLogin']);
 Route::post('/customer/forgot-password', [CustomerPasswordResetController::class, 'forgot'])
