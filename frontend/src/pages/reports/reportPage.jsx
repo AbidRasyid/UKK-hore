@@ -189,7 +189,7 @@ export default function ReportPage() {
               <table className="min-w-262.5 w-full">
                 <thead>
                   <tr className="border-b border-[#e5e7eb] bg-[#f8f9fa]">
-                    {[t("no"), t("report_date"), t("opening_balance"), t("deposits"), t("withdrawals"), t("system_balance"), t("physical_balance"), t("status")].map((heading) => (
+                    {[t("no"), t("report_date"), t("opening_balance"), t("deposits"), t("withdrawals"), t("system_balance"), "Closing balance", t("status"), t("approved_by"), t("actions")].map((heading) => (
                       <th key={heading} className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                         {heading}
                       </th>
