@@ -4,18 +4,18 @@ namespace App\Http\Controllers;
 
 use App\enum\ActivityAction;
 use Illuminate\Http\Request;
-use App\Models\Transaction;
 use App\Models\DailyReport;
 use App\Models\User;
 use App\Services\LogService;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class DailyReportController extends Controller
 {
     public function index(){
         try {
-            $data = DailyReport::all();
+            $data = DailyReport::query()
+                ->whereNotNull('closing_balance')
+                ->get();
             return response()->json([
                 'message' => 'data has been loaded successfully',
                 'data' => $data
@@ -27,100 +27,17 @@ class DailyReportController extends Controller
         }
     }
 
-    public function initiateStore(int $user_id)
-    {
-         $today = Carbon::today();
-        try {
-            $transactions = Transaction::with('customer')
-                ->where('user_id', $user_id)
-                ->where('transaction_date', $today)
-                ->whereNull('daily_report_id')
-                ->get();
-
-            $totalDeposits = $transactions->where('transaction_type', 'deposit')->sum('amount');
-            $totalWithdrawals = $transactions->where('transaction_type', 'withdrawal')->sum('amount');
-
-            $formattedTransactions = $transactions->map(function ($trx) {
-                return [
-                    'id' => $trx->id,
-                    'account_number' => $trx->customer ? $trx->customer->account_number : 'Unknown',
-                    'transaction_type' => $trx->transaction_type,
-                    'amount' => $trx->amount,
-                    'transaction_date' => $trx->transaction_date,
-                ];
-            });
-
-            return response()->json([
-                'message' => 'form retrieved successfully',
-                'data' => [
-                    'transactions' => $formattedTransactions,
-                    'total_deposits' => $totalDeposits,
-                    'total_withdrawals' => $totalWithdrawals,
-                    'system_balance' => $totalDeposits - $totalWithdrawals,
-                ]
-            ], 200);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'message' => 'Failed to retrieve form',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
     public function tellerIndex(int $user_id)
     {
         return response()->json([
             'message' => 'daily reports loaded successfully',
             'data' => DailyReport::query()
                 ->where('user_id', $user_id)
+                ->whereNotNull('closing_balance')
                 ->latest('report_date')
                 ->latest('id')
                 ->get(),
         ], 200);
-    }
-
-    public function store(Request $request, int $user_id)
-    {
-        $validated = $request->validate([
-            'opening_balance' => ['required', 'integer', 'min:0'],
-            'system_balance' => ['required', 'integer', 'min:0'],
-            'total_deposits' => ['required', 'integer', 'min:0'],
-            'total_withdrawals' => ['required', 'integer', 'min:0'],
-            'physical_balance' => ['required', 'integer', 'min:0'],
-        ]);
-
-        if(!($validated['system_balance'] === ($validated['opening_balance'] + $validated['total_deposits'] - $validated['total_withdrawals']))){
-            return response()->json([
-                'message' => 'system balance is not valid',
-            ], 422);
-        }
-
-        if(!($validated['physical_balance'] === $validated['system_balance'])){
-            return response()->json([
-                'message' => 'physical balance is not valid',
-            ], 422);
-        }
-
-        $dailyreport = DailyReport::create([
-            'user_id' => $user_id,
-            'report_date' => now()->toDateString(),
-            'opening_balance' => $validated['opening_balance'],
-            'total_deposits' => $validated['total_deposits'],
-            'total_withdrawals' => $validated['total_withdrawals'],
-            'system_balance' => $validated['system_balance'],
-            'physical_balance' => $validated['physical_balance'],
-        ]);
-
-        if($dailyreport) {
-            Transaction::query()
-                ->where('user_id', $user_id)
-                ->where('daily_report_id', null)
-                ->update(['daily_report_id' => $dailyreport->id]);
-        }
-        return response()->json([
-            'message' => 'Daily report created successfully and waiting supervisor approval',
-            'data' => $dailyreport
-        ], 201);
     }
 
     public function show(int $daily_report_id)
@@ -129,13 +46,24 @@ class DailyReportController extends Controller
             $dailyreport = DailyReport::findOrFail($daily_report_id);
             $teller = User::find($dailyreport['user_id'], 'fullname');
             $supervisor = User::find($dailyreport['approved_by'], 'fullname');
-            $transaction = Transaction::where('daily_report_id', '=', $daily_report_id, 'and')->get();
+            $transaction = $dailyreport->transaction;
+            $tellers = $dailyreport->shift?->tellers()
+                ->with('user:id,fullname')
+                ->get()
+                ->map(fn ($shiftTeller) => $shiftTeller->user?->fullname ?? $shiftTeller->name)
+                ->filter()
+                ->values() ?? collect();
+
             return response()->json([
                 'message' => 'data has been loaded successfully',
-                'teller' => $teller->fullname,
+                'teller' => $teller?->fullname,
+                'tellers' => $tellers->isNotEmpty()
+                    ? $tellers
+                    : collect([$teller?->fullname])->filter()->values(),
                 'supervisor' => $supervisor->fullname ?? null,
                 'data' => $dailyreport,
-                'transactions' => $transaction
+                'transactions' => $transaction,
+                'cash_denominations' => $dailyreport->cashDenominations,
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([
@@ -149,6 +77,11 @@ class DailyReportController extends Controller
     {
         try {
             $dailyreport = DailyReport::findOrFail($daily_report_id);
+            if ($dailyreport->closing_balance === null) {
+                return response()->json([
+                    'message' => 'An open shift cannot be approved before it is closed.',
+                ], 422);
+            }
             $dailyreport->update([
                 'status' => 'approved',
                 'approved_by' => $request->user()->id,
