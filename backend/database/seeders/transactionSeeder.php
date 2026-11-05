@@ -17,7 +17,7 @@ class transactionSeeder extends Seeder
     public function run(): void
     {
         $teller = User::where('username', '=', 'teller', 'and')->firstOrFail();
-        $report = DailyReport::whereDate('report_date', '2026-10-29')->firstOrFail();
+        $report = DailyReport::whereDate('report_date', today())->firstOrFail();
 
         $transactions = [
             [
@@ -42,7 +42,7 @@ class transactionSeeder extends Seeder
                 $transaction + [
                     'user_id' => $teller->id,
                     'daily_report_id' => $report->id,
-                    'transaction_date' => '2026-10-29',
+                    'transaction_date' => today()->toDateString(),
                 ],
             );
         }
