@@ -235,11 +235,19 @@ const {
             </button>
             <button
               type="button"
+              onClick={() => setIsBulkFormOpen(true)}
+              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-500 hover:text-gray-900"
+            >
+              <Plus className="h-4 w-4" />
+              {t("bulk_create_customers")}
+            </button>
+            <button
+              type="button"
               onClick={() => navigate("/account/add")}
               className="inline-flex items-center gap-2 rounded-md bg-black px-5 py-2 text-sm text-white hover:bg-gray-800"
             >
               <Plus className="h-4 w-4" />
-              {t("add_customers")}
+              {t("add_customer")}
             </button>
             </div>
           </div>
@@ -363,7 +371,8 @@ const {
                 <button
                   type="button"
                   onClick={() => setCustomerRows((rows) => [...rows, createEmptyCustomer()])}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:border-gray-500"
+                  disabled={customerRows.length >= 100 || isSaving}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:border-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Plus className="h-4 w-4" />
                   {t("add_another_row")}
