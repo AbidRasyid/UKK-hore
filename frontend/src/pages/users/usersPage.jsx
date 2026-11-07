@@ -62,9 +62,20 @@ export default function UsersPage() {
             <h1 className="text-2xl font-bold text-gray-900">{t("users")}</h1>
             <p className="mt-2 text-sm text-gray-600">{t("manage_users_desc")}</p>
           </div>
-            <button
-            onClick={() => {navigate('/user/add')}} 
-            className="bg-black text-white px-5 py-2 rounded-md hover:bg-gray-800">+ {t("add_user")}</button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/users/bulk')}
+                className="rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:border-gray-500"
+              >
+                {t("bulk_create_users")}
+              </button>
+              <button
+                onClick={() => navigate('/user/add')}
+                className="rounded-md bg-black px-5 py-2 text-sm text-white hover:bg-gray-800"
+              >
+                + {t("add_user")}
+              </button>
+            </div>
           </div>
         {/* User Table */}
         <div className="overflow-x-auto">
