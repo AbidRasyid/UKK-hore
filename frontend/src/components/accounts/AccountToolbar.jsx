@@ -20,7 +20,7 @@ export default function AccountToolbar({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".xlsx,.xls"
+          accept=".xlsx"
           onChange={onImport}
           className="hidden"
         />
