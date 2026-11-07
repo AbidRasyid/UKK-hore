@@ -37,26 +37,7 @@ public function store(UserRequest $request): JsonResponse
     $validated = $request->validated();
     
     try {
-        $user = DB::transaction(function () use ($validated) {
-            $user = User::create([
-                'username' => $validated['username'],
-                'password' => $validated['password'],
-                'fullname' => $validated['fullname'],
-                'role' => $validated['role'],
-                'status' => $validated['status'] ?? Status::ACTIVE->value,
-            ]);
-
-            if ($user->role === UserRole::TELLER) {
-                Teller::create([
-                    'user_id' => $user->id,
-                    'name' => $validated['fullname'],
-                    'class' => $validated['class'],
-                    'phone_number' => $validated['phone_number'],
-                ]);
-            }
-
-            return $user;
-        });
+        $user = DB::transaction(fn () => $this->createUser($validated));
 
         $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
         LogService::record(
@@ -84,6 +65,68 @@ public function store(UserRequest $request): JsonResponse
         ], 400);
     }
 }
+
+    public function bulkStore(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'users' => ['required', 'array', 'min:1', 'max:100'],
+            'users.*.username' => ['required', 'string', 'distinct', 'unique:users,username'],
+            'users.*.password' => ['required', 'string'],
+            'users.*.fullname' => ['required', 'string'],
+            'users.*.role' => ['required', Rule::enum(UserRole::class)],
+            'users.*.status' => ['nullable', Rule::enum(Status::class)],
+            'users.*.class' => ['nullable', 'string', 'required_if:users.*.role,teller'],
+            'users.*.phone_number' => ['nullable', 'string', 'required_if:users.*.role,teller'],
+        ]);
+
+        try {
+            $users = DB::transaction(function () use ($validated) {
+                return collect($validated['users'])
+                    ->map(fn (array $userData) => $this->createUser($userData));
+            });
+
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            foreach ($users as $user) {
+                LogService::record(
+                    ActivityAction::USER_CREATED,
+                    "User created by {$actor} on User ID {$user->id}. Status: Success. User account created."
+                );
+            }
+
+            return response()->json([
+                'message' => 'Users created successfully',
+                'data' => $users,
+            ], 201);
+        } catch (\Throwable $e) {
+            FacadesLog::error($e->getMessage());
+
+            return response()->json([
+                'message' => 'Users failed to create.',
+            ], 500);
+        }
+    }
+
+    private function createUser(array $userData): User
+    {
+        $user = User::create([
+            'username' => $userData['username'],
+            'password' => $userData['password'],
+            'fullname' => $userData['fullname'],
+            'role' => $userData['role'],
+            'status' => $userData['status'] ?? Status::ACTIVE->value,
+        ]);
+
+        if ($user->role === UserRole::TELLER) {
+            Teller::create([
+                'user_id' => $user->id,
+                'name' => $userData['fullname'],
+                'class' => $userData['class'],
+                'phone_number' => $userData['phone_number'],
+            ]);
+        }
+
+        return $user;
+    }
 
     public function show(int $user_id): JsonResponse {
         try {
