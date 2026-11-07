@@ -99,13 +99,13 @@ export const useCustomers = () => {
 
     setIsSaving(true);
     try {
-      await Promise.all(rows.map((row) => api.post("/api/customers", row)));
+      await api.post("/api/customers/bulk", { customers: rows });
       alert(`${rows.length} ${t("accounts_added_successfully")}`);
       await fetchCustomers(); 
       closeModal(); 
     } catch (error) {
       console.error("Failed to add customer accounts", error);
-      alert(t("accounts_add_error"));
+      alert(error.response?.data?.message || t("accounts_add_error"));
     } finally {
       setIsSaving(false);
     }
