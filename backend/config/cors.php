@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173', 'http://localhost:8080', 'https://'],
+    'allowed_origins' => ['http://localhost:5173', 'http://localhost:8080', 'https://bankmini.abidrasyid.my.id'],
 
     'allowed_origins_patterns' => [],
 
