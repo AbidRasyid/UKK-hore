@@ -11,15 +11,10 @@ use App\enum\Status;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-
-function account_number(Customer $customer) {
-    $now = Carbon::now();
-    $academic_year = $now->month >= 7 ? $now->year : $now->year - 1;
-    return substr($academic_year, -2) . substr($customer->student_id, -4);
-}
 
 class CustomerController extends Controller
 {
@@ -48,34 +43,7 @@ class CustomerController extends Controller
                 "pin" => ['required', 'digits:6']
             ]);
 
-            $now = Carbon::now();
-
-            $academic_year = $now->month >= 7 ? $now->year : $now->year - 1;
-            $major = Majors::from($validated['student_class']);
-            $majorCode = match ($major) {
-                Majors::RPL => MajorsInit::RPL->value,
-                Majors::TKJ => MajorsInit::TKJ->value,
-                Majors::DKV => MajorsInit::DKV->value,
-                Majors::MP => MajorsInit::MP->value,
-                Majors::AK => MajorsInit::AK->value,
-                Majors::BR => MajorsInit::BR->value,
-                Majors::BD => MajorsInit::BD->value,
-                Majors::LPS => MajorsInit::LPS->value,
-            };
-
-                $customer = Customer::create([
-                    'student_id' => $validated['student_id'],
-                    'account_number' => substr((string) $academic_year, -2)
-                        . '0'
-                        . $majorCode
-                        . $validated['student_id'],
-                    'student_name' => $validated['student_name'],
-                    'email' => $validated['email'] ?? null,
-                    'student_class' => $validated['student_class'],
-                    'password' => $validated['password'],
-                    'status' => Status::ACTIVE->value,
-                    'pin' => $validated['pin'],
-                ]);
+                $customer = $this->createCustomer($validated);
 
                 $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
                 LogService::record(
@@ -101,6 +69,75 @@ class CustomerController extends Controller
                 "message" => "user failed to create". $e->getMessage()
             ], 400);
         }
+    }
+
+    public function bulkStore(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'customers' => ['required', 'array', 'min:1', 'max:100'],
+            'customers.*.student_name' => ['required', 'string'],
+            'customers.*.email' => ['nullable', 'email', 'distinct:ignore_case', 'unique:customers,email'],
+            'customers.*.student_id' => ['required', 'string', 'distinct', 'unique:customers,student_id'],
+            'customers.*.student_class' => ['required', Rule::enum(Majors::class)],
+            'customers.*.password' => ['required', 'string'],
+            'customers.*.pin' => ['required', 'digits:6'],
+        ]);
+
+        try {
+            $customers = DB::transaction(function () use ($validated) {
+                return collect($validated['customers'])
+                    ->map(fn (array $customer) => $this->createCustomer($customer));
+            });
+
+            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+            foreach ($customers as $customer) {
+                LogService::record(
+                    ActivityAction::CUSTOMER_CREATED,
+                    "Customer created by {$actor} on Customer ID {$customer->id}. Status: Success. Customer account created."
+                );
+            }
+
+            return response()->json([
+                'message' => 'Customers created successfully',
+                'data' => $customers,
+            ], 201);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'message' => 'Customers failed to create.',
+            ], 500);
+        }
+    }
+
+    private function createCustomer(array $customerData): Customer
+    {
+        $now = Carbon::now();
+        $academicYear = $now->month >= 7 ? $now->year : $now->year - 1;
+        $majorCode = match (Majors::from($customerData['student_class'])) {
+            Majors::RPL => MajorsInit::RPL->value,
+            Majors::TKJ => MajorsInit::TKJ->value,
+            Majors::DKV => MajorsInit::DKV->value,
+            Majors::MP => MajorsInit::MP->value,
+            Majors::AK => MajorsInit::AK->value,
+            Majors::BR => MajorsInit::BR->value,
+            Majors::BD => MajorsInit::BD->value,
+            Majors::LPS => MajorsInit::LPS->value,
+        };
+
+        return Customer::create([
+            'student_id' => $customerData['student_id'],
+            'account_number' => substr((string) $academicYear, -2)
+                . '0'
+                . $majorCode
+                . $customerData['student_id'],
+            'student_name' => $customerData['student_name'],
+            'email' => $customerData['email'] ?? null,
+            'student_class' => $customerData['student_class'],
+            'password' => $customerData['password'],
+            'status' => Status::ACTIVE->value,
+            'pin' => $customerData['pin'],
+        ]);
     }
 
     public function show($customer_id = null):JsonResponse
