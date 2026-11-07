@@ -15,6 +15,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@yudiel/react-qr-scanner": "^2.6.0",
     "axios": "^1.20.0",
+    "exceljs": "^4.4.0",
     "ky": "^2.2.0",
     "laravel-echo": "^2.6.3",
     "lucide-react": "^1.49.0",
@@ -25,8 +26,7 @@
     "react-router": "^8.4.0",
     "react-router-dom": "^7.18.4",
     "router": "^2.2.0",
-    "tailwindcss": "^4.3.3",
-    "xlsx": "^0.18.5"
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
