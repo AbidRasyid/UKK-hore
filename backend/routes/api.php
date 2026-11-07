@@ -55,9 +55,11 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->gr
     Route::patch('/pin-change-request/{id}', [ChangePinController::class, 'update']);
 
     Route::post('/user', [UserController::class, 'store']);
+    Route::post('/users/bulk', [UserController::class, 'bulkStore']);
     Route::patch('/user/{user_id}/edit', [UserController::class, 'update']);
 
     Route::post('/customers', [CustomerController::class, 'store']);
+    Route::post('/customers/bulk', [CustomerController::class, 'bulkStore']);
     Route::patch('/customer/{customer_id}/edit', [CustomerController::class, 'update']);
     Route::delete('/customer/{customer_id}/delete', [CustomerController::class, 'delete']);
 
