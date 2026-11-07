@@ -13,6 +13,7 @@ import Layout from './components/Layout';
 import NotFound from './pages/errors/404';
 
 import UserFormPage from './pages/users/userFormPage';
+import UserBulkCreatePage from './pages/users/userBulkCreatePage';
 import CustomerFormPage from './pages/customers/customerFormPage';
 import CustomerTransactionPage from './pages/customers/customerTransactionPage';
 import ReportDetail from './pages/reports/reportDetail';
@@ -39,6 +40,7 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['administrator', 'admin']}/>}>
               <Route path="/accounts" element={<CustomerPage />} />
               <Route path="/users" element={<UsersPage />} />
+              <Route path="/users/bulk" element={<UserBulkCreatePage />} />
               <Route path='/user/add' element={ <UserFormPage/> }/>
               <Route path={"/user/:user_id/edit"} element={<UserFormPage/>}/>
               <Route path="/settings" element={<SettingsPage />} />
