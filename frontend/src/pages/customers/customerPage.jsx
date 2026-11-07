@@ -4,7 +4,6 @@ import { useLocation, useOutletContext } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import CustomerRow from "../../components/accounts/accountRow";
-import * as XLSX from "xlsx";
 import { useCustomers } from "../../hooks/useCustomer";
 import { useLanguage } from "../../hooks/useLanguage";
 import SearchableMajorSelect from "../../components/accounts/SearchableMajorSelect";
@@ -74,38 +73,54 @@ const {
     setCustomerRows([createEmptyCustomer()]);
   };
 
-  const escapeCsvValue = (value) => {
-    const stringValue = String(value ?? "");
-    return `"${stringValue.replaceAll('"', '""')}"`;
-  };
-
-  const handleExport = () => {
+  const handleExport = async () => {
     if (filteredCustomers.length === 0) {
       alert(t("no_accounts_to_export"));
       return;
     }
 
-    const headers = ["ID", "Name", "Account number", "Student ID", "Major", "Status"];
-    const rows = filteredCustomers.map((customer, index) => [
-      index + 1,
-      customer.student_name || "",
-      customer.account_number || "",
-      customer.student_id || "",
-      customer.student_class || "",
-      customer.status?.value ?? customer.status ?? "",
-    ]);
-    const csv = [headers, ...rows]
-      .map((row) => row.map(escapeCsvValue).join(","))
-      .join("\r\n");
-    const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
-    const downloadUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.download = `customer-accounts-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(downloadUrl);
+    try {
+      const { default: ExcelJS } = await import("exceljs");
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Customer Accounts");
+      worksheet.columns = [
+        { header: "ID", key: "id", width: 10 },
+        { header: "Name", key: "name", width: 30 },
+        { header: "Account number", key: "accountNumber", width: 22 },
+        { header: "Student ID", key: "studentId", width: 18 },
+        { header: "Major", key: "major", width: 16 },
+        { header: "Status", key: "status", width: 16 },
+      ];
+      worksheet.addRows(
+        filteredCustomers.map((customer, index) => ({
+          id: index + 1,
+          name: customer.student_name || "",
+          accountNumber: customer.account_number || "",
+          studentId: customer.student_id || "",
+          major: customer.student_class || "",
+          status: customer.status?.value ?? customer.status ?? "",
+        }))
+      );
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.views = [{ state: "frozen", ySplit: 1 }];
+      worksheet.autoFilter = "A1:F1";
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `customer-accounts-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
+    } catch (error) {
+      console.error("Failed to export customer accounts to Excel", error);
+      alert(t("excel_export_error"));
+    }
   };
 
   const handleExcelImport = async (event) => {
@@ -114,9 +129,34 @@ const {
     if (!file) return;
 
     try {
-      const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const importedRows = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+      const { default: ExcelJS } = await import("exceljs");
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await file.arrayBuffer());
+      const worksheet = workbook.worksheets[0];
+      if (!worksheet) {
+        alert(t("excel_no_rows"));
+        return;
+      }
+
+      const getCellText = (cell) => {
+        const value = cell.value;
+        if (value == null) return "";
+        if (value instanceof Date) return value.toISOString();
+        if (typeof value === "object") {
+          if ("richText" in value) {
+            return value.richText.map((part) => part.text).join("").trim();
+          }
+          if ("result" in value) return String(value.result ?? "").trim();
+          if ("text" in value) return String(value.text ?? "").trim();
+          return "";
+        }
+        return String(value).trim();
+      };
+
+      const headers = new Map();
+      worksheet.getRow(1).eachCell({ includeEmpty: true }, (cell, columnNumber) => {
+        headers.set(columnNumber, getCellText(cell));
+      });
       const headerMap = {
         name: "student_name",
         fullname: "student_name",
@@ -139,10 +179,12 @@ const {
         pin: "pin",
       };
 
-      const rows = importedRows.map((importedRow) => {
+      const rows = [];
+      worksheet.eachRow((worksheetRow, rowNumber) => {
+        if (rowNumber === 1) return;
         const row = createEmptyCustomer();
         let nameHeaderPriority = 0;
-        Object.entries(importedRow).forEach(([header, value]) => {
+        headers.forEach((header, columnNumber) => {
           const normalizedHeader = normalize(header).replace(/[\s_-]/g, "");
           const field = headerMap[normalizedHeader];
           if (field) {
@@ -151,17 +193,25 @@ const {
               if (priority < nameHeaderPriority) return;
               nameHeaderPriority = priority;
             }
+            const value = getCellText(worksheetRow.getCell(columnNumber));
             row[field] =
               field === "student_class"
                 ? normalizeMajor(value)
-                : String(value).trim();
+                : value;
           }
         });
-        return row;
+        if (Object.values(row).some((value) => value !== "")) {
+          rows.push(row);
+        }
       });
 
       if (!rows.length || rows.every((row) => Object.values(row).every((value) => !value))) {
         alert(t("excel_no_rows"));
+        return;
+      }
+
+      if (rows.length > 100) {
+        alert(t("bulk_customer_limit"));
         return;
       }
 
@@ -213,7 +263,7 @@ const {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".xlsx,.xls"
+              accept=".xlsx"
               onChange={handleExcelImport}
               className="hidden"
             />
