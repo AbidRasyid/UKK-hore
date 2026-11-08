@@ -11,6 +11,8 @@ import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import api from "../../api/axios";
 import { formatDate } from "../../utils/format";
 import { useLanguage } from "../../hooks/useLanguage";
+import Pagination from "../../components/Pagination";
+import useClientPagination from "../../hooks/useClientPagination";
 
 const getStatus = (request) => String(request.status ?? "pending").toLowerCase();
 
@@ -150,6 +152,7 @@ export default function PinRequestsPage() {
       return matchesStatus && matchesSearch;
     });
   }, [requests, search, statusFilter]);
+  const { currentPage, setCurrentPage, pageItems, pageSize, startIndex } = useClientPagination(filteredRequests);
 
   const summary = useMemo(
     () => ({
@@ -244,13 +247,13 @@ export default function PinRequestsPage() {
                   ) : filteredRequests.length === 0 ? (
                     <tr><td colSpan="6" className="px-6 py-10 text-center text-sm text-gray-500">{t("no_pin_requests")}</td></tr>
                   ) : (
-                    filteredRequests.map((request, index) => {
+                    pageItems.map((request, index) => {
                       const status = getStatus(request);
                       const isUpdating = updatingId === request.id;
 
                       return (
                         <tr key={request.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 text-sm text-gray-900">{index + 1}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900">{startIndex + index + 1}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">
                             <p className="font-medium">{getCustomerName(request)}</p>
                             <p className="mt-1 text-xs text-gray-500">#{getCustomerIdentifier(request)}</p>
@@ -296,6 +299,7 @@ export default function PinRequestsPage() {
               </table>
             </div>
           )}
+          <Pagination currentPage={currentPage} totalItems={filteredRequests.length} pageSize={pageSize} onPageChange={setCurrentPage} />
         </section>
       </div>
     </div>

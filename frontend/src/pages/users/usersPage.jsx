@@ -5,6 +5,8 @@ import api from "../../api/axios";
 import UserRow from "../../components/users/userRow";
 import { handleBlock } from "../../utils/handlers";
 import { useLanguage } from "../../hooks/useLanguage";
+import Pagination from "../../components/Pagination";
+import useClientPagination from "../../hooks/useClientPagination";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -42,6 +44,7 @@ export default function UsersPage() {
         .some((value) => String(value ?? '').toLowerCase().includes(query))
     );
   }, [headerSearch, users]);
+  const { currentPage, setCurrentPage, pageItems, pageSize, startIndex } = useClientPagination(filteredUsers);
 
   const isTeller = activeRoleView === 'teller';
   return (
@@ -95,13 +98,14 @@ export default function UsersPage() {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user, index) => {
-                  return <UserRow key={user.id} user={user} index={index} onBlock={block}/>;
+                pageItems.map((user, index) => {
+                  return <UserRow key={user.id} user={user} index={startIndex + index} onBlock={block}/>;
                 })
               )}
             </tbody>
           </table>
         </div>
+        <Pagination currentPage={currentPage} totalItems={filteredUsers.length} pageSize={pageSize} onPageChange={setCurrentPage} />
       </div>
     </div>
   );

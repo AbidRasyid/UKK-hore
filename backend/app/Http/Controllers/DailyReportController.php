@@ -14,6 +14,7 @@ class DailyReportController extends Controller
     public function index(){
         try {
             $data = DailyReport::query()
+                ->with('user:id,fullname')
                 ->whereNotNull('closing_balance')
                 ->get();
             return response()->json([

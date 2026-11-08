@@ -30,17 +30,16 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-full flex flex-col bg-transparent font-sans">
-      {/* Top Header Bar */}
-      <DashboardHeader
-        role={activeRoleView}
-        searchValue={headerSearch}
-        onSearchChange={setHeaderSearch}
-        onSearchSubmit={handleSearchSubmit}
-        searchPlaceholder={isTeller ? t('search_customer') : t('search_all')}
-        showSearch={isTeller}
-        searchOnLeft={isTeller}
-        user={user}
-      />
+      {isTeller && (
+        <DashboardHeader
+          searchValue={headerSearch}
+          onSearchChange={setHeaderSearch}
+          onSearchSubmit={handleSearchSubmit}
+          searchPlaceholder={t('search_customer')}
+          showSearch
+          searchOnLeft
+        />
+      )}
 
       {/* Main Role-Specific Dashboard Content */}
       <div className="flex-1">

@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, Printer, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertCircle, Printer } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
-import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import api from "../../api/axios";
 import { formatCurrency, formatDate } from "../../utils/format";
 import { useLanguage } from "../../hooks/useLanguage";
-
-const getUserId = (user) => user?.id ?? user?.user_id;
+import Pagination from "../../components/Pagination";
+import FilterExportCard from "../../components/FilterExportCard";
+import useListFilters from "../../hooks/useListFilters";
+import useDebouncedValue from "../../hooks/useDebouncedValue";
+import { exportToExcel } from "../../utils/exportToExcel";
+import { fetchAllPages } from "../../utils/fetchAllPages";
 
 const formatReceiptDate = (value, lang) => {
   if (!value) return "-";
@@ -23,67 +26,41 @@ const formatReceiptDate = (value, lang) => {
 export default function TellerTransactionsPage() {
   const { user } = useOutletContext();
   const { lang, t } = useLanguage();
+  const { search, setSearch, dateMode, setDateMode, dateValue, setDateValue, dateParams } = useListFilters();
+  const requestSearch = useDebouncedValue(search);
   const [transactions, setTransactions] = useState([]);
-  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [reloadKey, setReloadKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [receiptTransaction, setReceiptTransaction] = useState(null);
-
-  const fetchTransactions = async () => {
-    const tellerId = getUserId(user);
-    if (!tellerId) {
-      setErrorMessage(t("user_session_unidentified"));
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setErrorMessage("");
-    try {
-      const response = await api.get(`/api/transactions/${tellerId}`);
-      const data = response.data?.data;
-      if (!Array.isArray(data)) {
-        throw new Error("Invalid transactions response.");
-      }
-      setTransactions(data);
-    } catch (error) {
-      console.error("Failed to load teller transactions", error);
-      setErrorMessage(
-        error.response?.data?.message || t("teller_transactions_load_error")
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
     let isMounted = true;
 
     const loadTransactions = async () => {
-      const tellerId = getUserId(user);
-      if (!tellerId) {
-        if (isMounted) {
-          setErrorMessage(t("user_session_unidentified"));
-          setIsLoading(false);
-        }
-        return;
-      }
-
       setIsLoading(true);
       setErrorMessage("");
       try {
-        const response = await api.get(`/api/transactions/${tellerId}`);
-        const data = response.data?.data;
-        if (!Array.isArray(data)) {
+        const response = await api.get("/api/teller/transactions/history", {
+          params: { ...dateParams, search: requestSearch, page },
+        });
+        const data = response.data;
+        if (!Array.isArray(data?.data) || !Number.isInteger(data?.current_page)) {
           throw new Error("Invalid transactions response.");
         }
-        if (isMounted) setTransactions(data);
-      } catch (error) {
-        console.error("Failed to load teller transactions", error);
         if (isMounted) {
-          setErrorMessage(
-            error.response?.data?.message || t("teller_transactions_load_error")
-          );
+          setTransactions(data.data);
+          setPage(data.current_page);
+          setLastPage(Math.max(1, Number(data.last_page) || 1));
+          setTotal(Number(data.total) || 0);
+        }
+      } catch {
+        if (isMounted) {
+          setErrorMessage(t("teller_transactions_load_error"));
         }
       } finally {
         if (isMounted) setIsLoading(false);
@@ -94,7 +71,7 @@ export default function TellerTransactionsPage() {
     return () => {
       isMounted = false;
     };
-  }, [user, t]);
+  }, [page, reloadKey, requestSearch, dateParams, t]);
 
   useEffect(() => {
     if (!receiptTransaction) return undefined;
@@ -117,25 +94,57 @@ export default function TellerTransactionsPage() {
     };
   }, [receiptTransaction, t]);
 
-  const filteredTransactions = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return transactions;
+  const handleSearchChange = (value) => {
+    setSearch(value);
+    setPage(1);
+  };
 
-    return transactions.filter((transaction) =>
-      String(transaction.account_number ?? "").toLowerCase().includes(query)
-    );
-  }, [transactions, search]);
+  const handleDateModeChange = (value) => {
+    setDateMode(value);
+    setPage(1);
+  };
+
+  const handleDateValueChange = (value) => {
+    setDateValue(value);
+    setPage(1);
+  };
+
+  const handleExport = async () => {
+    if (!total) return;
+    setIsExporting(true);
+    setErrorMessage("");
+    try {
+      const allTransactions = await fetchAllPages(api, "/api/teller/transactions/history", {
+        ...dateParams,
+        search,
+      });
+      await exportToExcel({
+        rows: allTransactions.map((transaction) => ({
+          id: transaction.id,
+          account_number: transaction.account_number || "",
+          type: transaction.transaction_type,
+          date: transaction.transaction_date,
+          amount: transaction.amount,
+        })),
+        columns: [
+          { header: t("reference_id"), key: "id", width: 18 },
+          { header: t("account_number"), key: "account_number", width: 20 },
+          { header: t("transaction_type"), key: "type", width: 18 },
+          { header: t("date"), key: "date", width: 18 },
+          { header: t("amount"), key: "amount", width: 18 },
+        ],
+        fileName: "my-transactions.xlsx",
+        sheetName: "Transactions",
+      });
+    } catch {
+      setErrorMessage(t("export_failed"));
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="min-h-full bg-[#f8f9fa]">
-      <DashboardHeader
-        role="teller"
-        user={user}
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder={t("search_account_number")}
-        searchOnLeft
-      />
       <div className="p-6 lg:p-8">
         <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
@@ -144,16 +153,22 @@ export default function TellerTransactionsPage() {
               {t("teller_transactions_desc")}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={fetchTransactions}
-            disabled={isLoading}
-            className="inline-flex items-center gap-2 self-start rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-500 disabled:opacity-60 sm:self-auto"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            {t("refresh")}
-          </button>
         </div>
+
+        <FilterExportCard
+          search={search}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder={t("search_account_number")}
+          dateMode={dateMode}
+          onDateModeChange={handleDateModeChange}
+          dateValue={dateValue}
+          onDateValueChange={handleDateValueChange}
+          onRefresh={() => setReloadKey((key) => key + 1)}
+          isRefreshing={isLoading}
+          onExport={handleExport}
+          isExporting={isExporting}
+          exportDisabled={total === 0}
+        />
 
         {errorMessage && (
           <div className="mb-6 flex items-center gap-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -180,20 +195,20 @@ export default function TellerTransactionsPage() {
                     {t("loading")}
                   </td>
                 </tr>
-              ) : filteredTransactions.length === 0 ? (
+              ) : transactions.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="px-6 py-8 text-center text-sm text-gray-500">
                     {t("no_teller_transactions")}
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map((transaction, index) => {
+                transactions.map((transaction, index) => {
                   const transactionType = String(transaction.transaction_type ?? "transaction").toLowerCase();
                   const isDeposit = transactionType === "deposit";
 
                   return (
                     <tr key={transaction.id ?? `${transaction.account_number}-${index}`} className="border-t border-gray-200">
-                      <td className="px-6 py-4 text-sm text-gray-500">{index + 1}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500">{(page - 1) * 10 + index + 1}</td>
                       <td className="px-6 py-4 font-mono text-sm text-gray-900">{transaction.account_number || "-"}</td>
                       <td className="px-6 py-4 text-sm capitalize text-gray-900">{t(transactionType) || transactionType}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">
@@ -220,6 +235,7 @@ export default function TellerTransactionsPage() {
             </tbody>
           </table>
         </div>
+        <Pagination currentPage={page} totalItems={total} pageSize={10} onPageChange={setPage} />
       </div>
       {receiptTransaction && (
         <section id="receipt-print-area" className="receipt-print-area" aria-label={t("receipt")}>

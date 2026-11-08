@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, CalendarDays, CheckCircle2, Clock3, RefreshCw } from "lucide-react";
-import { useOutletContext } from "react-router-dom";
-import DashboardHeader from "../../components/dashboard/DashboardHeader";
+import { AlertCircle, CalendarDays, CheckCircle2, Clock3 } from "lucide-react";
 import api from "../../api/axios";
 import ReportRow from "../../components/reports/reportRow";
 import { useLanguage } from "../../hooks/useLanguage";
+import Pagination from "../../components/Pagination";
+import useClientPagination from "../../hooks/useClientPagination";
+import useListFilters from "../../hooks/useListFilters";
+import FilterExportCard from "../../components/FilterExportCard";
+import { exportToExcel } from "../../utils/exportToExcel";
 
 const getStatus = (report) => String(report.status ?? "pending").toLowerCase();
 
@@ -27,12 +30,12 @@ const getStatus = (report) => String(report.status ?? "pending").toLowerCase();
 // };
 
 export default function ReportPage() {
-  const { user } = useOutletContext();
   const { t } = useLanguage();
   const [reports, setReports] = useState([]);
-  const [search, setSearch] = useState("");
+  const { search, setSearch, dateMode, setDateMode, dateValue, setDateValue, matchesDate } = useListFilters();
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const fetchReports = async () => {
@@ -99,35 +102,66 @@ export default function ReportPage() {
     return reports.filter((report) => {
       const status = getStatus(report);
       const matchesStatus = statusFilter === "all" || status === statusFilter;
+      const matchesPeriod = matchesDate(report.report_date);
       const matchesSearch =
         !query ||
         [report.report_date, report.id, status].some((value) =>
           String(value ?? "").toLowerCase().includes(query)
         );
 
-      return matchesStatus && matchesSearch;
+      return matchesStatus && matchesPeriod && matchesSearch;
     });
-  }, [reports, search, statusFilter]);
+  }, [reports, search, statusFilter, matchesDate]);
+  const { currentPage, setCurrentPage, pageItems, pageSize, startIndex } = useClientPagination(filteredReports);
 
-  const summary = useMemo(
-    () => ({
-      total: reports.length,
-      approved: reports.filter((report) => getStatus(report) === "approved").length,
-      pending: reports.filter((report) => getStatus(report) !== "approved").length,
-    }),
-    [reports]
-  );
+  const summary = useMemo(() => {
+    const periodReports = reports.filter((report) => matchesDate(report.report_date));
+    return {
+      total: periodReports.length,
+      approved: periodReports.filter((report) => getStatus(report) === "approved").length,
+      pending: periodReports.filter((report) => getStatus(report) !== "approved").length,
+    };
+  }, [reports, matchesDate]);
+
+  const handleExport = async () => {
+    if (!filteredReports.length) return;
+    setIsExporting(true);
+    try {
+      await exportToExcel({
+        rows: filteredReports.map((report) => ({
+          id: report.id,
+          report_date: report.report_date,
+          opening_balance: report.opening_balance,
+          deposits: report.total_deposits,
+          withdrawals: report.total_withdrawals,
+          system_balance: report.system_balance,
+          closing_balance: report.closing_balance ?? report.physical_balance,
+          status: getStatus(report),
+          approved_by: report.approved_by ?? "",
+        })),
+        columns: [
+          { header: t("report_id"), key: "id", width: 12 },
+          { header: t("report_date"), key: "report_date", width: 18 },
+          { header: t("opening_balance"), key: "opening_balance", width: 18 },
+          { header: t("deposits"), key: "deposits", width: 18 },
+          { header: t("withdrawals"), key: "withdrawals", width: 18 },
+          { header: t("system_balance"), key: "system_balance", width: 18 },
+          { header: "Closing balance", key: "closing_balance", width: 18 },
+          { header: t("status"), key: "status", width: 14 },
+          { header: t("approved_by"), key: "approved_by", width: 18 },
+        ],
+        fileName: "daily-reports.xlsx",
+        sheetName: "Daily reports",
+      });
+    } catch {
+      setErrorMessage(t("export_failed"));
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="min-h-full bg-[#f8f9fa]">
-      <DashboardHeader
-        role={(user?.role || "").toLowerCase().trim()}
-        user={user}
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder={t("search_report")}
-      />
-
       <div className="mx-auto max-w-[1600px] space-y-6 p-6 lg:p-8">
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
@@ -141,15 +175,6 @@ export default function ReportPage() {
               {t("report_page_desc")}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={fetchReports}
-            disabled={isLoading}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#d1d5db] bg-white px-4 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            {t("refresh")}
-          </button>
         </header>
 
         <div className="grid gap-4 sm:grid-cols-3">
@@ -157,6 +182,36 @@ export default function ReportPage() {
           <SummaryCard icon={CheckCircle2} label={t("approved")} value={summary.approved} />
           <SummaryCard icon={Clock3} label={t("pending")} value={summary.pending} />
         </div>
+
+        <FilterExportCard
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder={t("search_report")}
+          dateMode={dateMode}
+          onDateModeChange={setDateMode}
+          dateValue={dateValue}
+          onDateValueChange={setDateValue}
+          onRefresh={fetchReports}
+          isRefreshing={isLoading}
+          onExport={handleExport}
+          isExporting={isExporting}
+          exportDisabled={filteredReports.length === 0}
+        >
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">{t("status")}</span>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none focus:border-gray-600 focus:ring-2 focus:ring-gray-200"
+              aria-label={t("filter_reports_status")}
+            >
+              <option value="all">{t("all_statuses")}</option>
+              <option value="pending">{t("pending")}</option>
+              <option value="approved">{t("approved")}</option>
+              <option value="rejected">{t("rejected")}</option>
+            </select>
+          </label>
+        </FilterExportCard>
 
         <section className="overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           <div className="flex flex-col gap-3 border-b border-[#e5e7eb] px-6 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8">
@@ -166,17 +221,6 @@ export default function ReportPage() {
                 {filteredReports.length} {filteredReports.length === 1 ? t("report_found") : t("reports_found")}
               </p>
             </div>
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-              className="h-10 rounded-md border border-[#d1d5db] bg-white px-3 text-sm text-gray-700 outline-none focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
-              aria-label={t("filter_reports_status")}
-            >
-              <option value="all">{t("all_statuses")}</option>
-              <option value="pending">{t("pending")}</option>
-              <option value="approved">{t("approved")}</option>
-              <option value="rejected">{t("rejected")}</option>
-            </select>
           </div>
 
           {errorMessage ? (
@@ -210,14 +254,14 @@ export default function ReportPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredReports.map((report, index) => {
+                    pageItems.map((report, index) => {
                       // const status = getStatus(report);
 
                       return (
                         <ReportRow
                         key={report.id ?? `${report.report_date}-${index}`}
                         report={report}
-                        index={index}
+                        index={startIndex + index}
                         />
                       );
                     })
@@ -226,6 +270,7 @@ export default function ReportPage() {
               </table>
             </div>
           )}
+          <Pagination currentPage={currentPage} totalItems={filteredReports.length} pageSize={pageSize} onPageChange={setCurrentPage} />
         </section>
       </div>
     </div>

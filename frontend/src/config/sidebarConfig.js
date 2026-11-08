@@ -61,6 +61,13 @@ export const menuItems = [
     path: '/transactions',
     icon: accountIcon,
     roles: ['teller'],
+  },
+  {
+    id: 'supervisor-transactions',
+    titleKey: 'transactions',
+    path: '/supervisor/transactions',
+    icon: accountIcon,
+    roles: ['supervisor'],
   }
 ];
 
@@ -79,7 +86,7 @@ export const getFilteredMenuItems = (role) => {
 
   if (normalizedRole === 'supervisor') {
     return menuItems.filter((item) =>
-      ['dashboard', 'reports', 'journals'].includes(item.id)
+      ['dashboard', 'reports', 'journals', 'supervisor-transactions'].includes(item.id)
     );
   }
 

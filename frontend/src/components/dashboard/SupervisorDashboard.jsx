@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+// eslint-disable-next-line no-unused-vars
 import { TrendingUp } from 'lucide-react';
 import api from '../../api/axios';
 import { useLanguage } from '../../hooks/useLanguage';
+import { formatCurrency, formatDate } from '../../utils/format';
 
 /**
  * Custom Pending Report Clipboard Icon matching supervisor_dashboard.png
  */
+// eslint-disable-next-line no-unused-vars
 const PendingReportIcon = ({ className = "w-6 h-6 text-[#ca8a04]" }) => (
   <svg
     className={className}
@@ -26,97 +29,57 @@ const PendingReportIcon = ({ className = "w-6 h-6 text-[#ca8a04]" }) => (
 
 export default function SupervisorDashboard() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
-  const [pendingReportsCount, setPendingReportsCount] = useState(14);
-  const [syncTime] = useState(() => {
-    return '10:42:05 AM';
-  });
+  const { t, lang } = useLanguage();
+  const locale = lang === 'id' ? 'id-ID' : 'en-US';
+  const [pendingReports, setPendingReports] = useState(null);
+  const [pendingReportsCount, setPendingReportsCount] = useState(null);
+  const [transactions, setTransactions] = useState(null);
+  const [dailyVolume, setDailyVolume] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [syncTime, setSyncTime] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
 
-    const fetchDailyReports = async () => {
-      try {
-        const res = await api.get('/api/daily-reports').catch(() => null);
+    const fetchDashboardData = async () => {
+      const [reportsResult, transactionsResult] = await Promise.allSettled([
+        api.get('/api/daily-reports'),
+        api.get('/api/supervisor/transactions'),
+      ]);
 
-        if (!isMounted) return;
+      if (!isMounted) return;
 
-        if (res?.data?.data && Array.isArray(res.data.data)) {
-          const reports = res.data.data;
-          // Count pending reports (status not approved)
-          const pending = reports.filter(
-            (r) => String(r.status).toLowerCase() !== 'approved'
-          ).length;
-          setPendingReportsCount(pending > 0 ? pending : 14);
-        } else {
-          setPendingReportsCount(14);
-        }
-      } catch {
-        if (!isMounted) return;
-        setPendingReportsCount(14);
+      if (reportsResult.status === 'fulfilled') {
+        const reports = reportsResult.value.data?.data;
+        const pending = Array.isArray(reports)
+          ? reports.filter((report) => String(report.status).toLowerCase() === 'draft')
+          : [];
+        setPendingReports(pending);
+        setPendingReportsCount(pending.length);
+      } else {
+        setPendingReports(null);
+        setPendingReportsCount(null);
       }
+
+      if (transactionsResult.status === 'fulfilled') {
+        const data = transactionsResult.value.data?.data;
+        setTransactions(Array.isArray(data?.transactions) ? data.transactions : []);
+        setDailyVolume(Number(data?.daily_volume) || 0);
+      } else {
+        setTransactions(null);
+        setDailyVolume(null);
+      }
+
+      setSyncTime(new Date());
+      setIsLoading(false);
     };
 
-    fetchDailyReports();
+    fetchDashboardData();
 
     return () => {
       isMounted = false;
     };
   }, []);
-
-  // Tellers Overview list matching mockup
-  const tellersData = [
-    {
-      name: 'Alice Chen',
-      status: 'Active',
-      statusType: 'active',
-      cashPosition: '$45,200.00',
-      pendingApprovals: 3,
-      isPendingAlert: true,
-    },
-    {
-      name: 'Marcus Johnson',
-      status: 'Closing',
-      statusType: 'closing',
-      cashPosition: '$12,050.50',
-      pendingApprovals: 0,
-      isPendingAlert: false,
-    },
-    {
-      name: 'Sarah Williams',
-      status: 'Offline',
-      statusType: 'offline',
-      cashPosition: '$0.00',
-      pendingApprovals: 0,
-      isPendingAlert: false,
-    },
-    {
-      name: 'David Lee',
-      status: 'Active',
-      statusType: 'active',
-      cashPosition: '$89,400.00',
-      pendingApprovals: 1,
-      isPendingAlert: true,
-    },
-  ];
-
-  // Attention Required items
-  const attentionItems = [
-    {
-      referenceId: 'TRX-99842',
-      badge: 'Review',
-      badgeClass: 'bg-[#ca8a04] text-white',
-      amount: '$50,000.00',
-      teller: 'Teller: A. Chen',
-    },
-    {
-      referenceId: 'TRX-99810',
-      badge: 'Flagged',
-      badgeClass: 'bg-[#b91c1c] text-white',
-      amount: '$120,500.00',
-      teller: 'Teller: D. Lee',
-    },
-  ];
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -132,7 +95,7 @@ export default function SupervisorDashboard() {
         </div>
         <div>
           <span className="font-mono text-sm text-gray-700 font-medium">
-            {t('last_sync')} {syncTime}
+            {t('last_sync')} {syncTime ? new Intl.DateTimeFormat(locale, { timeStyle: 'medium' }).format(syncTime) : '—'}
           </span>
         </div>
       </div>
@@ -149,12 +112,12 @@ export default function SupervisorDashboard() {
           </div>
           <div className="mt-4">
             <span className="text-4xl font-bold text-gray-900 font-mono">
-              {pendingReportsCount}
+              {pendingReportsCount ?? '—'}
             </span>
           </div>
         </div>
 
-        {/* TOTAL DAILY VOL. (Placeholder as instructed) */}
+        {/* TOTAL DAILY VOL. */}
         <div className="bg-white border border-[#e5e7eb] rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)] min-h-36 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
@@ -164,7 +127,7 @@ export default function SupervisorDashboard() {
           </div>
           <div className="mt-4 text-right">
             <span className="text-3xl sm:text-4xl font-bold text-gray-900 font-mono">
-              $1,245,000
+              {dailyVolume === null ? '—' : formatCurrency(dailyVolume, locale)}
             </span>
           </div>
         </div>
@@ -172,20 +135,13 @@ export default function SupervisorDashboard() {
 
       {/* 2-Column Main Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: TELLERS OVERVIEW (col-span-8) */}
+        {/* Left Column: TRANSACTION OVERVIEW (col-span-8) */}
         <div className="lg:col-span-8 bg-white border border-[#e5e7eb] rounded-lg overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           {/* Header */}
           <div className="px-6 py-4 flex items-center justify-between border-b border-[#e5e7eb]">
             <h2 className="text-sm font-bold tracking-wider text-gray-900 uppercase font-sans">
               {t('tellers_overview')}
             </h2>
-            <button
-              type="button"
-              onClick={() => navigate('/reports')}
-              className="text-xs font-medium text-gray-700 hover:text-black hover:underline cursor-pointer font-sans"
-            >
-              {t('view_all')}
-            </button>
           </div>
 
           {/* Table */}
@@ -193,63 +149,37 @@ export default function SupervisorDashboard() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#e5e7eb] bg-transparent">
-                  <th className="py-3.5 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    {t('teller_name')}
-                  </th>
-                  <th className="py-3.5 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    {t('status')}
-                  </th>
-                  <th className="py-3.5 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-                    {t('cash_position')}
-                  </th>
+                  <th className="py-3.5 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">{t('transaction_date')}</th>
+                  <th className="py-3.5 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">{t('teller_name')}</th>
+                  <th className="py-3.5 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">{t('transaction_type')}</th>
                   <th className="py-3.5 px-6 text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans text-right">
-                    {t('pending_approvals')}
+                    {t('transaction_amount')}
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e5e7eb]/80">
-                {tellersData.map((teller, idx) => {
-                  let statusBadgeClass = 'bg-[#e5e7eb] text-gray-600';
-                  if (teller.statusType === 'active') {
-                    statusBadgeClass = 'bg-[#15803d] text-white';
-                  } else if (teller.statusType === 'closing') {
-                    statusBadgeClass = 'bg-[#ca8a04] text-white';
-                  }
-
-                  return (
-                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                      {/* TELLER NAME */}
-                      <td className="py-4 px-6 text-sm font-semibold text-gray-900 whitespace-nowrap font-sans">
-                        {teller.name}
-                      </td>
-
-                      {/* STATUS */}
-                      <td className="py-4 px-6 whitespace-nowrap">
-                        <span
-                          className={`inline-block text-xs font-medium px-2.5 py-0.5 rounded ${statusBadgeClass} font-sans`}
-                        >
-                          {t(teller.statusType) || teller.status}
-                        </span>
-                      </td>
-
-                      {/* CASH POSITION */}
-                      <td className="py-4 px-6 text-sm font-mono font-semibold text-gray-900 whitespace-nowrap">
-                        {teller.cashPosition}
-                      </td>
-
-                      {/* PENDING APPROVALS */}
-                      <td className="py-4 px-6 text-right whitespace-nowrap">
-                        <span
-                          className={`font-mono text-sm font-semibold ${
-                            teller.isPendingAlert ? 'text-[#ca8a04]' : 'text-gray-900'
-                          }`}
-                        >
-                          {teller.pendingApprovals}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {transactions === null || transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="py-8 px-6 text-center text-sm text-gray-500">
+                      {isLoading
+                        ? t('loading_data')
+                        : transactions === null
+                          ? t('dashboard_data_unavailable')
+                          : t('no_transactions_today')}
+                    </td>
+                  </tr>
+                ) : transactions.map((transaction) => (
+                  <tr key={transaction.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="py-4 px-6 text-sm text-gray-700 whitespace-nowrap">{formatDate(transaction.transaction_date, locale)}</td>
+                    <td className="py-4 px-6 text-sm font-semibold text-gray-900 whitespace-nowrap">{transaction.teller_name || '—'}</td>
+                    <td className="py-4 px-6 text-sm text-gray-700 whitespace-nowrap">
+                      {t(String(transaction.transaction_type).toLowerCase()) || transaction.transaction_type}
+                    </td>
+                    <td className="py-4 px-6 text-right text-sm font-mono font-semibold text-gray-900 whitespace-nowrap">
+                      {formatCurrency(transaction.amount)}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -267,34 +197,34 @@ export default function SupervisorDashboard() {
 
           {/* Sub-cards */}
           <div className="space-y-4 mt-3">
-            {attentionItems.map((item, idx) => (
+            {pendingReports === null ? (
+              <p className="py-6 text-center text-sm text-gray-500">
+                {isLoading ? t('loading_data') : t('dashboard_data_unavailable')}
+              </p>
+            ) : pendingReports.length === 0 ? (
+              <p className="py-6 text-center text-sm text-gray-500">{t('no_pending_reports')}</p>
+            ) : pendingReports.slice(0, 3).map((report) => (
               <div
-                key={idx}
+                key={report.id}
                 className="border border-[#e5e7eb] rounded-lg p-4 bg-white shadow-2xs space-y-3"
               >
                 {/* Reference ID & Badge */}
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs text-gray-600">
-                    {item.referenceId}
-                  </span>
-                  <span
-                    className={`text-[11px] font-medium px-2 py-0.5 rounded ${item.badgeClass} font-sans`}
-                  >
-                    {t(item.badge.toLowerCase()) || item.badge}
-                  </span>
+                  <span className="font-mono text-xs text-gray-600">#{report.id} · {formatDate(report.report_date, locale)}</span>
+                  <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-sans">{t('review')}</span>
                 </div>
 
                 {/* Amount */}
                 <div className="text-right py-1">
                   <span className="font-mono text-2xl font-bold text-gray-900">
-                    {item.amount}
+                    {formatCurrency(Number(report.total_deposits || 0) + Number(report.total_withdrawals || 0), locale)}
                   </span>
                 </div>
 
                 {/* Bottom Row: Teller & Review button */}
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-xs font-medium text-gray-600 font-sans">
-                    {item.teller}
+                    {report.user?.fullname || t('teller_name')}
                   </span>
                   <button
                     type="button"

@@ -8,6 +8,8 @@ import { useCustomers } from "../../hooks/useCustomer";
 import { useLanguage } from "../../hooks/useLanguage";
 import SearchableMajorSelect from "../../components/accounts/SearchableMajorSelect";
 import { normalizeMajor } from "../../utils/majors";
+import Pagination from "../../components/Pagination";
+import useClientPagination from "../../hooks/useClientPagination";
 
 const normalize = (value) => String(value ?? "").toLowerCase().trim();
 
@@ -58,6 +60,7 @@ const {
       ].some((value) => normalize(value).includes(query))
     );
   }, [customers, headerSearch]);
+  const { currentPage, setCurrentPage, pageItems, pageSize, startIndex } = useClientPagination(filteredCustomers);
 
   const updateCustomerRow = (index, field, value) => {
     setCustomerRows((rows) =>
@@ -321,11 +324,11 @@ const {
                   </td>
                 </tr>
               ) : filteredCustomers.length > 0 ? (
-                filteredCustomers.map((customer, index) => (
+                pageItems.map((customer, index) => (
                   <CustomerRow
                     key={customer.id}
                     customer={customer}
-                    index={index}
+                    index={startIndex + index}
                     onDelete={handleDelete}
                     onBlock={handleBlock}
                     onEdit={(selectedCustomer) => navigate(`/account/${selectedCustomer.id}/edit`)}
@@ -341,6 +344,7 @@ const {
             </tbody>
           </table>
         </div>
+        <Pagination currentPage={currentPage} totalItems={filteredCustomers.length} pageSize={pageSize} onPageChange={setCurrentPage} />
       </div>
 
       {isBulkFormOpen && (

@@ -13,6 +13,8 @@ import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom
 import api from "../../api/axios";
 import { formatCurrency, formatDate } from "../../utils/format";
 import { useLanguage } from "../../hooks/useLanguage";
+import Pagination from "../../components/Pagination";
+import useClientPagination from "../../hooks/useClientPagination";
 
 const getStatus = (report) => String(report?.status ?? "pending").toLowerCase();
 
@@ -89,6 +91,8 @@ export default function ReportDetail() {
       setIsApproving(false);
     }
   };
+
+  const { currentPage, setCurrentPage, pageItems, pageSize, startIndex } = useClientPagination(transactions);
 
   if (isLoading) {
     return (
@@ -263,7 +267,7 @@ export default function ReportDetail() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e5e7eb]">
-                  {transactions.map((transaction, index) => {
+                  {pageItems.map((transaction, index) => {
                     const transactionType = String(
                       transaction.transaction_type ?? "transaction"
                     ).toLowerCase();
@@ -271,7 +275,7 @@ export default function ReportDetail() {
 
                     return (
                       <tr key={transaction.id ?? `${transactionType}-${index}`}>
-                        <td className="px-6 py-4 text-sm text-gray-500">{index + 1}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500">{startIndex + index + 1}</td>
                         <td className="px-6 py-4">
                           <span className="inline-flex items-center gap-2 text-sm font-medium capitalize text-gray-900">
                             {isDeposit ? (
@@ -305,6 +309,7 @@ export default function ReportDetail() {
               </table>
             </div>
           )}
+          <Pagination currentPage={currentPage} totalItems={transactions.length} pageSize={pageSize} onPageChange={setCurrentPage} />
         </section>
       </div>
     </div>

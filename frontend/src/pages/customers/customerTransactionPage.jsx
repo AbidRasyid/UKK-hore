@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowDown,
   ArrowLeft,
@@ -12,6 +12,8 @@ import api from "../../api/axios";
 import { formatCurrency, formatDate } from "../../utils/format";
 import CurrencyInput from "react-currency-input-field";
 import { useLanguage } from "../../hooks/useLanguage";
+import Pagination from "../../components/Pagination";
+import useClientPagination from "../../hooks/useClientPagination";
 
 const normalizeStatus = (value) => String(value ?? "active").toLowerCase();
 
@@ -77,7 +79,7 @@ export default function CustomerTransactionPage() {
 
   const balance = Number(customer?.balance) || 0;
   const activeStatus = normalizeStatus(customer?.status?.value ?? customer?.status);
-  const recentTransactions = useMemo(() => transactions.slice(0, 10), [transactions]);
+  const { currentPage, setCurrentPage, pageItems, pageSize } = useClientPagination(transactions);
 
   const handleTransaction = async (event) => {
     event.preventDefault();
@@ -219,9 +221,9 @@ export default function CustomerTransactionPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
-                  {recentTransactions.length === 0 ? (
+                  {pageItems.length === 0 ? (
                     <tr><td colSpan="5" className="px-5 py-10 text-center text-gray-500">{t("no_transactions")}</td></tr>
-                  ) : recentTransactions.map((transaction, index) => {
+                  ) : pageItems.map((transaction, index) => {
                     const isDeposit = String(transaction.transaction_type).toLowerCase() === "deposit";
                     return (
                       <tr key={transaction.id ?? index}>
@@ -243,6 +245,7 @@ export default function CustomerTransactionPage() {
                 </tbody>
               </table>
             </div>
+            <Pagination currentPage={currentPage} totalItems={transactions.length} pageSize={pageSize} onPageChange={setCurrentPage} />
           </section>
           </>
         )}

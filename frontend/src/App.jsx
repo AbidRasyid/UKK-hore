@@ -22,6 +22,7 @@ import ResetPasswordPage from './pages/resetPasswordPage';
 import ForgotPasswordPage from './pages/forgotPasswordPage';
 import CustomerPage from './pages/customers/customerPage';
 import TellerTransactionsPage from './pages/transactions/tellerTransactionsPage';
+import SupervisorTransactionsPage from './pages/transactions/supervisorTransactionsPage';
 
 function App() {
   return (
@@ -49,8 +50,12 @@ function App() {
               <Route path="/account/:customer_id/edit" element={<CustomerFormPage />} />
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={['administrator', 'admin', 'supervisor']}/>}>
+            <Route element={<ProtectedRoute allowedRoles={['administrator', 'admin', 'supervisor']}/> }>
               <Route path="/journals" element={<JournalsPage />} />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['supervisor']}/> }>
+              <Route path="/supervisor/transactions" element={<SupervisorTransactionsPage />} />
             </Route>
             
             <Route element={<ProtectedRoute allowedRoles={['teller']}/>}>

@@ -1,19 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, RefreshCw } from "lucide-react";
-import { useOutletContext } from "react-router-dom";
-import DashboardHeader from "../components/dashboard/DashboardHeader";
+import { AlertCircle } from "lucide-react";
 import api from "../api/axios";
 import { formatCurrency, formatDate } from "../utils/format";
 import { useLanguage } from "../hooks/useLanguage";
+import Pagination from "../components/Pagination";
+import useClientPagination from "../hooks/useClientPagination";
+import useListFilters from "../hooks/useListFilters";
+import FilterExportCard from "../components/FilterExportCard";
+import { exportToExcel } from "../utils/exportToExcel";
 
 const normalize = (value) => String(value ?? "").toLowerCase().trim();
 
 export default function JournalsPage() {
-  const { user } = useOutletContext();
   const { t } = useLanguage();
   const [journals, setJournals] = useState([]);
-  const [search, setSearch] = useState("");
+  const { search, setSearch, dateMode, setDateMode, dateValue, setDateValue, matchesDate } = useListFilters();
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const fetchJournals = async () => {
@@ -80,7 +83,7 @@ export default function JournalsPage() {
     if (!query) return journals;
 
     return journals.filter((journal) =>
-      [
+      matchesDate(journal.transaction?.transaction_date ?? journal.created_at) && [
         journal.id,
         journal.transaction_id,
         journal.account_code,
@@ -90,18 +93,43 @@ export default function JournalsPage() {
         journal.transaction?.transaction_date,
       ].some((value) => normalize(value).includes(query))
     );
-  }, [journals, search]);
+  }, [journals, search, matchesDate]);
+  const { currentPage, setCurrentPage, pageItems, pageSize } = useClientPagination(filteredJournals);
+
+  const handleExport = async () => {
+    if (!filteredJournals.length) return;
+    setIsExporting(true);
+    try {
+      await exportToExcel({
+        rows: filteredJournals.map((journal) => {
+          const position = normalize(journal.position);
+          return {
+            date: journal.transaction?.transaction_date ?? journal.created_at,
+            account_code: journal.account_code,
+            transaction_type: journal.transaction?.transaction_type ?? "",
+            debit: position === "debit" ? journal.amount : "",
+            credit: position === "credit" ? journal.amount : "",
+          };
+        }),
+        columns: [
+          { header: t("date"), key: "date", width: 20 },
+          { header: t("account_code"), key: "account_code", width: 16 },
+          { header: t("transaction_type"), key: "transaction_type", width: 20 },
+          { header: t("debit"), key: "debit", width: 18 },
+          { header: t("credit"), key: "credit", width: 18 },
+        ],
+        fileName: "journal-history.xlsx",
+        sheetName: "Journal history",
+      });
+    } catch {
+      setErrorMessage(t("export_failed"));
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="min-h-full bg-[#f8f9fa]">
-      <DashboardHeader
-        role={normalize(user?.role)}
-        user={user}
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder={t("search_transaction")}
-      />
-
       <div className="mx-auto max-w-[1600px] space-y-6 p-6 lg:p-8">
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
@@ -115,16 +143,22 @@ export default function JournalsPage() {
               {t("journal_description")}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={fetchJournals}
-            disabled={isLoading}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#d1d5db] bg-white px-4 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            {t("refresh")}
-          </button>
         </header>
+
+        <FilterExportCard
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder={t("search_transaction")}
+          dateMode={dateMode}
+          onDateModeChange={setDateMode}
+          dateValue={dateValue}
+          onDateValueChange={setDateValue}
+          onRefresh={fetchJournals}
+          isRefreshing={isLoading}
+          onExport={handleExport}
+          isExporting={isExporting}
+          exportDisabled={filteredJournals.length === 0}
+        />
 
         <section className="overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           <div className="border-b border-[#e5e7eb] px-6 py-5 lg:px-8">
@@ -174,7 +208,7 @@ export default function JournalsPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredJournals.map((journal) => {
+                    pageItems.map((journal) => {
                       const position = normalize(journal.position);
 
                       return (
@@ -204,6 +238,7 @@ export default function JournalsPage() {
               </table>
             </div>
           )}
+          <Pagination currentPage={currentPage} totalItems={filteredJournals.length} pageSize={pageSize} onPageChange={setCurrentPage} />
         </section>
       </div>
     </div>

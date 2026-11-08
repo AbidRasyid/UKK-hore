@@ -26,6 +26,116 @@ use App\Services\LogService;
 class TransactionController extends Controller
 {
 
+    public function supervisorIndex()
+    {
+        $today = now()->toDateString();
+
+        $dailyVolume = Transaction::query()
+            ->whereDate('transaction_date', $today)
+            ->sum('amount');
+
+        $transactions = Transaction::query()
+            ->with('user:id,fullname')
+            ->whereDate('transaction_date', $today)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->limit(10)
+            ->get(['id', 'user_id', 'transaction_date', 'transaction_type', 'amount', 'created_at'])
+            ->map(fn (Transaction $transaction) => [
+                'id' => $transaction->id,
+                'transaction_date' => $transaction->transaction_date,
+                'transaction_type' => $transaction->transaction_type,
+                'amount' => $transaction->amount,
+                'teller_name' => $transaction->user?->fullname,
+            ]);
+
+        return response()->json([
+            'data' => [
+                'daily_volume' => $dailyVolume,
+                'transactions' => $transactions,
+            ],
+        ]);
+    }
+
+    public function supervisorHistory()
+    {
+        $filters = request()->validate([
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'per_page' => ['sometimes', 'integer', 'min:10', 'max:100'],
+        ]);
+
+        $transactions = Transaction::query()
+            ->with('user:id,fullname')
+            ->when($filters['date_from'] ?? null, fn ($query, $date) => $query->whereDate('transaction_date', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn ($query, $date) => $query->whereDate('transaction_date', '<=', $date))
+            ->when($filters['search'] ?? null, function ($query, $search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('id', 'like', "%{$search}%")
+                        ->orWhere('transaction_type', 'like', "%{$search}%")
+                        ->orWhere('amount', 'like', "%{$search}%")
+                        ->orWhereHas('user', fn ($userQuery) => $userQuery->where('fullname', 'like', "%{$search}%"));
+                });
+            })
+            ->orderByDesc('transaction_date')
+            ->orderByDesc('id')
+            ->paginate($filters['per_page'] ?? 10)
+            ->appends(request()->query())
+            ->through(fn (Transaction $transaction) => [
+                'id' => $transaction->id,
+                'transaction_date' => $transaction->transaction_date,
+                'transaction_type' => $transaction->transaction_type,
+                'amount' => $transaction->amount,
+                'teller_name' => $transaction->user?->fullname,
+            ]);
+
+        return response()->json($transactions);
+    }
+
+    public function tellerHistory(Request $request)
+    {
+        $teller = Auth::user();
+        if (!$teller || $teller->status !== Status::ACTIVE) {
+            return response()->json(['message' => 'Unauthorized access'], 403);
+        }
+
+        $filters = $request->validate([
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'per_page' => ['sometimes', 'integer', 'min:10', 'max:100'],
+        ]);
+
+        $transactions = Transaction::query()
+            ->with('customer:id,account_number')
+            ->where('user_id', $teller->id)
+            ->when($filters['date_from'] ?? null, fn ($query, $date) => $query->whereDate('transaction_date', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn ($query, $date) => $query->whereDate('transaction_date', '<=', $date))
+            ->when($filters['search'] ?? null, function ($query, $search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('id', 'like', "%{$search}%")
+                        ->orWhere('transaction_type', 'like', "%{$search}%")
+                        ->orWhere('amount', 'like', "%{$search}%")
+                        ->orWhereHas('customer', fn ($customerQuery) => $customerQuery->where('account_number', 'like', "%{$search}%"));
+                });
+            })
+            ->orderByDesc('transaction_date')
+            ->orderByDesc('id')
+            ->paginate($filters['per_page'] ?? 10)
+            ->appends($request->query())
+            ->through(fn (Transaction $transaction) => [
+                'id' => $transaction->id,
+                'transaction_date' => $transaction->transaction_date,
+                'transaction_type' => $transaction->transaction_type,
+                'amount' => $transaction->amount,
+                'account_number' => $transaction->customer?->account_number,
+                'created_at' => $transaction->created_at,
+            ]);
+
+        return response()->json($transactions);
+    }
+
     public function teller_daily_show(int $teller_id) {
         try {
             if (Auth::id() !== $teller_id) {

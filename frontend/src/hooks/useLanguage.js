@@ -1,23 +1,35 @@
-import { useCallback, useState } from 'react';
+import { createContext, createElement, useCallback, useContext, useRef, useState } from 'react';
 import { dictionary } from '../utils/dictionary';
 
-export const useLanguage = () => {
-  const [lang, setLang] = useState(localStorage.getItem('app_lang') || 'en');
+const LanguageContext = createContext(null);
 
-  const toggleLanguage = () => {
-  console.log("SEBELUM:", lang);
-  const newLang = lang === 'en' ? 'id' : 'en';
-  console.log("SESUDAH:", newLang);
-  
-  setLang(newLang);
-  localStorage.setItem('app_lang', newLang);
-  window.location.reload();
-};
+export function LanguageProvider({ children }) {
+  const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'en');
+  const langRef = useRef(lang);
+  langRef.current = lang;
+
+  const toggleLanguage = useCallback(() => {
+    setLang((currentLanguage) => {
+      const newLanguage = currentLanguage === 'en' ? 'id' : 'en';
+      localStorage.setItem('app_lang', newLanguage);
+      return newLanguage;
+    });
+  }, []);
 
   const t = useCallback(
-    (key) => dictionary[lang]?.[key] || dictionary.en[key] || key,
-    [lang]
+    (key) => dictionary[langRef.current]?.[key] || dictionary.en[key] || key,
+    []
   );
 
-  return { lang, toggleLanguage, toogleLanguage: toggleLanguage, t };
+  return createElement(
+    LanguageContext.Provider,
+    { value: { lang, toggleLanguage, toogleLanguage: toggleLanguage, t } },
+    children
+  );
+}
+
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (!context) throw new Error('useLanguage must be used within LanguageProvider.');
+  return context;
 };

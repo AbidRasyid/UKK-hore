@@ -73,6 +73,8 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->gr
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::SUPERVISOR->value])->group(function(){
     Route::get('/daily-reports', [DailyReportController::class, 'index']);
+    Route::get('/supervisor/transactions', [TransactionController::class, 'supervisorIndex']);
+    Route::get('/supervisor/transactions/history', [TransactionController::class, 'supervisorHistory']);
     Route::patch('/daily-report/{id}/approve', [DailyReportController::class, 'approve']);
 });
 
@@ -84,6 +86,7 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::TELLER->value])->group(fun
     Route::get('/teller/customer/{customer_id}/transactions', [TransactionController::class, 'show']);
     Route::get('/daily-reports/{user_id}', [DailyReportController::class, 'tellerIndex']);
     Route::get('/transactions/{teller_id}', [TransactionController::class, 'teller_daily_show']);
+    Route::get('/teller/transactions/history', [TransactionController::class, 'tellerHistory']);
 
 });
 

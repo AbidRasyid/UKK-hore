@@ -3,9 +3,11 @@ import iconLogo from '../assets/Icon.svg';
 import logoutIcon from '../assets/logoutIcon.svg';
 import { getFilteredMenuItems } from '../config/sidebarConfig';
 import { useOutletContext } from 'react-router-dom';
+import { useState } from 'react';
 import { purgeBrowserStorageCredentials } from '../utils/cookies';
 import { useLanguage } from '../hooks/useLanguage';
 import api from '../api/axios';
+import { ChevronDown, Globe } from 'lucide-react';
 
 /**
  * Sidebar navigation component matching the Aside - SideNavBar design.
@@ -21,6 +23,7 @@ export default function Sidebar({ terminalId = 'Terminal #042'}) {
   const navigate = useNavigate();
   const { user } = useOutletContext();
   const { t, toggleLanguage, lang } = useLanguage();
+  const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
 
   // Determine user role (passed as prop or retrieved from cookies)
   const currentRole = (user?.role || undefined)?.toLowerCase().trim();
@@ -68,9 +71,54 @@ export default function Sidebar({ terminalId = 'Terminal #042'}) {
             </span>
           </div>
         </div>
-        <button onClick={toggleLanguage}>
-        {lang === 'en' ? t('switch_to_indonesian') : t('switch_to_english')}
-        </button>
+        <div className="px-4 py-2">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsLanguageMenuOpen((isOpen) => !isOpen)}
+              aria-expanded={isLanguageMenuOpen}
+              aria-haspopup="true"
+              aria-controls="language-options"
+              className="flex h-10 w-full items-center gap-2.5 rounded-xl border border-black bg-white px-3 text-sm font-medium text-black transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
+            >
+              <Globe className="h-5 w-5 shrink-0" aria-hidden="true" />
+              <span className="flex-1">{lang === 'en' ? 'Language' : 'Bahasa'}</span>
+              <ChevronDown className={`h-5 w-5 shrink-0 transition-transform ${isLanguageMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+            </button>
+            {isLanguageMenuOpen && (
+            <div id="language-options" role="group" aria-label={lang === 'en' ? 'Choose language' : 'Pilih bahasa'} className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-xl border border-black bg-white p-1 shadow-lg">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLanguageMenuOpen(false);
+                  if (lang !== 'en') toggleLanguage();
+                }}
+                aria-pressed={lang === 'en'}
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                  lang === 'en' ? 'bg-black text-white' : 'text-gray-800 hover:bg-gray-100'
+                }`}
+              >
+                <span>English</span>
+                <span className="text-xs font-semibold">EN</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLanguageMenuOpen(false);
+                  if (lang !== 'id') toggleLanguage();
+                }}
+                aria-pressed={lang === 'id'}
+                className={`mt-1 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                  lang === 'id' ? 'bg-black text-white' : 'text-gray-800 hover:bg-gray-100'
+                }`}
+              >
+                <span>Bahasa Indonesia</span>
+                <span className="text-xs font-semibold">ID</span>
+              </button>
+            </div>
+            )}
+          </div>
+        </div>
 
         {/* Navigation List */}
         <nav className="flex-1 py-1 overflow-y-auto">
