@@ -34,7 +34,11 @@ Route::middleware('auth:sanctum')->get('/me', function (\Illuminate\Http\Request
     return response()->json($request->user());
 });
 Route::middleware('auth:customer')->get("/customer/me", function (\Illuminate\Http\Request $request) {
-    return response()->json($request->user('customer'));
+    $customer = $request->user('customer');
+
+    return response()->json(array_merge($customer->toArray(), [
+        'has_pin' => $customer->pin !== null,
+    ]));
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value . ',' . UserRole::SUPERVISOR->value])->group(function(){
@@ -91,6 +95,7 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::TELLER->value])->group(fun
 });
 
 Route::middleware(['auth:customer'])->group(function(){
+    Route::post('/customer/setup-pin', [ChangePinController::class, 'setup']);
     Route::post('/customer/change-pin', [ChangePinController::class, 'store']);
     Route::post('/customer/change-password', [CustomerPasswordResetController::class, 'change']);
     Route::patch('/customer/email', [CustomerController::class, 'updateEmail']);

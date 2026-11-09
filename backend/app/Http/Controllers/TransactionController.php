@@ -319,6 +319,13 @@ class TransactionController extends Controller
 
             $customer = Customer::findOrFail($transactionData['customer_id']);
 
+            if ($customer->pin === null) {
+                return response()->json([
+                    'status' => 'fail',
+                    'message' => 'Set up a transaction PIN before confirming transactions.',
+                ], 409);
+            }
+
             if (!Hash::check($validated['pin'], $customer->pin)) {
                 $actor = auth::guard('customer')->user()->id;
                 LogService::record(

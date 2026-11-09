@@ -8,6 +8,7 @@ use App\Models\ChangePinRequest;
 use App\Models\Customer;
 use App\Services\LogService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -16,6 +17,32 @@ use Kreait\Laravel\Firebase\Facades\Firebase;
 
 class ChangePinController extends Controller
 {
+    public function setup(Request $request)
+    {
+        $validated = $request->validate([
+            'new_pin' => ['required', 'digits:6'],
+        ]);
+        $customerId = $request->user('customer')->id;
+
+        $created = DB::transaction(function () use ($customerId, $validated): bool {
+            $customer = Customer::query()->lockForUpdate()->findOrFail($customerId);
+            if ($customer->pin !== null) {
+                return false;
+            }
+
+            $customer->update(['pin' => $validated['new_pin']]);
+            return true;
+        });
+
+        if (!$created) {
+            return response()->json([
+                'message' => 'A transaction PIN is already set. Use the change PIN flow instead.',
+            ], 409);
+        }
+
+        return response()->json(['message' => 'Transaction PIN set successfully.']);
+    }
+
     public function index() {
         $request = ChangePinRequest::with('customer:id,student_name,account_number')->get();
         return response()->json([

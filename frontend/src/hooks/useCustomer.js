@@ -76,11 +76,12 @@ export const useCustomers = () => {
       return {
         ...trimmedRow,
         email: trimmedRow.email || null,
+        pin: trimmedRow.pin || null,
         student_class: normalizeMajor(trimmedRow.student_class),
       };
     });
 
-    const requiredFields = ["student_name", "student_id", "student_class", "password", "pin"];
+    const requiredFields = ["student_name", "student_id", "student_class", "password"];
     if (rows.some((row) => requiredFields.some((field) => !row[field]))) {
       alert(t("fill_every_customer_field"));
       return;
@@ -91,7 +92,7 @@ export const useCustomers = () => {
       return;
     }
 
-    const invalidPin = rows.find((row) => !/^\d{6}$/.test(row.pin));
+    const invalidPin = rows.find((row) => row.pin && !/^\d{6}$/.test(row.pin));
     if (invalidPin) {
       alert(t("err_pin_must_be_6"));
       return;

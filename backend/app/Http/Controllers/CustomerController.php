@@ -40,7 +40,7 @@ class CustomerController extends Controller
                 "student_id" => ['required', 'string'],
                 "student_class" => ['required', Rule::enum(Majors::class)],
                 "password" => ['required', 'string'],
-                "pin" => ['required', 'digits:6']
+                "pin" => ['nullable', 'digits:6']
             ]);
 
                 $customer = $this->createCustomer($validated);
@@ -80,7 +80,7 @@ class CustomerController extends Controller
             'customers.*.student_id' => ['required', 'string', 'distinct', 'unique:customers,student_id'],
             'customers.*.student_class' => ['required', Rule::enum(Majors::class)],
             'customers.*.password' => ['required', 'string'],
-            'customers.*.pin' => ['required', 'digits:6'],
+            'customers.*.pin' => ['nullable', 'digits:6'],
         ]);
 
         try {
@@ -136,7 +136,7 @@ class CustomerController extends Controller
             'student_class' => $customerData['student_class'],
             'password' => $customerData['password'],
             'status' => Status::ACTIVE->value,
-            'pin' => $customerData['pin'],
+            'pin' => $customerData['pin'] ?? null,
         ]);
     }
 

@@ -8,6 +8,7 @@ import { useCustomers } from "../../hooks/useCustomer";
 import { useLanguage } from "../../hooks/useLanguage";
 import SearchableMajorSelect from "../../components/accounts/SearchableMajorSelect";
 import { normalizeMajor } from "../../utils/majors";
+import { parseAttendanceRoster } from "../../utils/importAttendanceRoster";
 import Pagination from "../../components/Pagination";
 import useClientPagination from "../../hooks/useClientPagination";
 
@@ -32,8 +33,19 @@ export default function CustomerPage() {
     return params.get("s") || location.state?.search || "";
   });
   const [isBulkFormOpen, setIsBulkFormOpen] = useState(false);
+  const [isRosterPickerOpen, setIsRosterPickerOpen] = useState(false);
   const [customerRows, setCustomerRows] = useState([createEmptyCustomer()]);
+  const [rosterGroups, setRosterGroups] = useState([]);
+  const [selectedRosterGroupIds, setSelectedRosterGroupIds] = useState([]);
+  const [bulkPassword, setBulkPassword] = useState("");
   const fileInputRef = useRef(null);
+  const selectedRosterCount = useMemo(
+    () =>
+      rosterGroups
+        .filter((group) => selectedRosterGroupIds.includes(group.id))
+        .reduce((count, group) => count + group.students.length, 0),
+    [rosterGroups, selectedRosterGroupIds]
+  );
 
 const { 
   customers,
@@ -74,6 +86,7 @@ const {
     if (isSaving) return;
     setIsBulkFormOpen(false);
     setCustomerRows([createEmptyCustomer()]);
+    setBulkPassword("");
   };
 
   const handleExport = async () => {
@@ -132,6 +145,14 @@ const {
     if (!file) return;
 
     try {
+      const attendanceGroups = await parseAttendanceRoster(file);
+      if (attendanceGroups.length) {
+        setRosterGroups(attendanceGroups);
+        setSelectedRosterGroupIds([]);
+        setIsRosterPickerOpen(true);
+        return;
+      }
+
       const { default: ExcelJS } = await import("exceljs");
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(await file.arrayBuffer());
@@ -218,7 +239,7 @@ const {
         return;
       }
 
-      const requiredFields = ["student_name", "student_id", "student_class", "password", "pin"];
+      const requiredFields = ["student_name", "student_id", "student_class", "password"];
       const missingRequiredFields = requiredFields.filter((field) =>
         rows.some((row) => !row[field])
       );
@@ -227,7 +248,7 @@ const {
         return;
       }
 
-      const invalidPin = rows.some((row) => !/^\d{6}$/.test(row.pin));
+      const invalidPin = rows.some((row) => row.pin && !/^\d{6}$/.test(row.pin));
       if (invalidPin) {
         alert(t("pin_must_be_6_digits"));
         return;
@@ -239,6 +260,27 @@ const {
       console.error("Failed to import customer Excel file", error);
       alert(t("excel_read_error"));
     }
+  };
+
+  const importSelectedRosterGroups = () => {
+    const rows = rosterGroups
+      .filter((group) => selectedRosterGroupIds.includes(group.id))
+      .flatMap((group) => group.students);
+    if (!rows.length) return;
+    if (rows.length > 100) {
+      alert(t("bulk_customer_limit"));
+      return;
+    }
+    setCustomerRows(rows);
+    setBulkPassword("");
+    setIsRosterPickerOpen(false);
+    setIsBulkFormOpen(true);
+  };
+
+  const applyPasswordToAll = () => {
+    const password = bulkPassword.trim();
+    if (!password) return;
+    setCustomerRows((rows) => rows.map((row) => ({ ...row, password })));
   };
 
   return (
@@ -288,7 +330,11 @@ const {
             </button>
             <button
               type="button"
-              onClick={() => setIsBulkFormOpen(true)}
+              onClick={() => {
+                setCustomerRows([createEmptyCustomer()]);
+                setBulkPassword("");
+                setIsBulkFormOpen(true);
+              }}
               className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-500 hover:text-gray-900"
             >
               <Plus className="h-4 w-4" />
@@ -347,6 +393,78 @@ const {
         <Pagination currentPage={currentPage} totalItems={filteredCustomers.length} pageSize={pageSize} onPageChange={setCurrentPage} />
       </div>
 
+      {isRosterPickerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <section className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">{t("roster_class_picker_title")}</h2>
+                <p className="mt-1 text-xs text-gray-500">{t("roster_class_picker_help")}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsRosterPickerOpen(false)}
+                aria-label={t("close")}
+                className="text-gray-500 hover:text-gray-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-5 p-6">
+              {[...new Set(rosterGroups.map((group) => group.sheetName))].map((sheetName) => (
+                <fieldset key={sheetName}>
+                  <legend className="mb-2 text-sm font-semibold text-gray-800">{sheetName}</legend>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {rosterGroups
+                      .filter((group) => group.sheetName === sheetName)
+                      .map((group) => (
+                        <label key={group.id} className="flex items-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={selectedRosterGroupIds.includes(group.id)}
+                            onChange={(event) =>
+                              setSelectedRosterGroupIds((selected) =>
+                                event.target.checked
+                                  ? [...selected, group.id]
+                                  : selected.filter((id) => id !== group.id)
+                              )
+                            }
+                          />
+                          <span>{group.label}</span>
+                          <span className="ml-auto text-xs text-gray-500">{group.students.length}</span>
+                        </label>
+                      ))}
+                  </div>
+                </fieldset>
+              ))}
+              <p className={`text-sm ${selectedRosterCount > 100 ? "text-red-600" : "text-gray-600"}`}>
+                {t("selected_roster_count").replace("{count}", selectedRosterCount)}
+              </p>
+              {selectedRosterCount > 100 && (
+                <p className="text-sm text-red-600">{t("bulk_customer_limit")}</p>
+              )}
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsRosterPickerOpen(false)}
+                  className="h-10 rounded-md border border-gray-300 px-4 text-sm text-gray-700"
+                >
+                  {t("cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={importSelectedRosterGroups}
+                  disabled={!selectedRosterCount || selectedRosterCount > 100}
+                  className="h-10 rounded-md bg-black px-4 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  {t("import_selected_students")}
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+
       {isBulkFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <section className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-lg bg-white shadow-xl">
@@ -369,6 +487,27 @@ const {
               }}
               className="p-6"
             >
+              <div className="mb-5 grid gap-2 rounded-md bg-gray-50 p-4 sm:grid-cols-[1fr_auto] sm:items-end">
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-gray-600">{t("group_password_label")}</span>
+                  <input
+                    type="password"
+                    value={bulkPassword}
+                    onChange={(event) => setBulkPassword(event.target.value)}
+                    placeholder={t("password")}
+                    className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm outline-none focus:border-gray-500 focus:ring-2 focus:ring-gray-200"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={applyPasswordToAll}
+                  disabled={!bulkPassword.trim() || isSaving}
+                  className="h-10 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 disabled:opacity-50"
+                >
+                  {t("apply_password_to_all")}
+                </button>
+                <p className="text-xs text-gray-500 sm:col-span-2">{t("pin_set_later_help")}</p>
+              </div>
               <div className="space-y-4">
                 {customerRows.map((row, index) => (
                   <div key={index} className="rounded-md border border-gray-200 p-4">
@@ -403,7 +542,7 @@ const {
                             />
                           ) : (
                             <input
-                              type={field === "pin" ? "password" : field === "email" ? "email" : "text"}
+                              type={field === "pin" || field === "password" ? "password" : field === "email" ? "email" : "text"}
                               inputMode={field === "pin" ? "numeric" : undefined}
                               minLength={field === "pin" ? 6 : undefined}
                               maxLength={field === "pin" ? 6 : undefined}

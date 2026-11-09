@@ -5,6 +5,7 @@ use App\Models\Teller;
 use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
 
 beforeEach(function () {
@@ -32,7 +33,7 @@ beforeEach(function () {
         $table->string('student_class');
         $table->unsignedBigInteger('balance')->default(10000);
         $table->string('password');
-        $table->string('pin');
+        $table->string('pin')->nullable();
         $table->string('status');
         $table->timestamps();
     });
@@ -98,6 +99,60 @@ it('creates customer accounts in one bulk request', function () {
     expect(Customer::count())->toBe(2);
     expect(Customer::query()->where('student_id', '20260001')->value('account_number'))
         ->toEndWith('4620260001');
+});
+
+it('creates customer accounts without a transaction pin', function () {
+    createBulkCreationAdmin();
+
+    $response = $this->postJson('/api/customers/bulk', [
+        'customers' => [
+            [
+                'student_name' => 'Student Without PIN',
+                'student_id' => '20260003',
+                'student_class' => 'rpl',
+                'password' => 'password',
+                'pin' => null,
+            ],
+        ],
+    ]);
+
+    $response->assertCreated()->assertJsonCount(1, 'data');
+    $this->assertDatabaseHas('customers', [
+        'student_id' => '20260003',
+        'pin' => null,
+    ]);
+});
+
+it('allows an authenticated customer to set a transaction pin once', function () {
+    $customer = Customer::create([
+        'account_number' => '2604620260004',
+        'student_id' => '20260004',
+        'student_name' => 'New PIN Student',
+        'email' => null,
+        'student_class' => 'rpl',
+        'balance' => 10000,
+        'password' => 'password',
+        'pin' => null,
+        'status' => 'active',
+    ]);
+    Sanctum::actingAs($customer, [], 'customer');
+
+    $this->getJson('/api/customer/me')
+        ->assertOk()
+        ->assertJson(['has_pin' => false]);
+
+    $this->postJson('/api/customer/setup-pin', ['new_pin' => '123456'])
+        ->assertOk()
+        ->assertJson(['message' => 'Transaction PIN set successfully.']);
+    expect(Hash::check('123456', $customer->fresh()->pin))->toBeTrue();
+    $customer->refresh();
+    $this->getJson('/api/customer/me')
+        ->assertOk()
+        ->assertJson(['has_pin' => true]);
+
+    $this->postJson('/api/customer/setup-pin', ['new_pin' => '654321'])
+        ->assertStatus(409);
+    expect(Hash::check('123456', $customer->fresh()->pin))->toBeTrue();
 });
 
 it('rejects duplicate student ids in a customer batch without creating any accounts', function () {
