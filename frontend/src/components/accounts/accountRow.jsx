@@ -28,14 +28,14 @@ export default function CustomerRow({ customer, index, onDelete, onEdit, onBlock
           onClick={() => onBlock(customer)}
           aria-label={isBlocked ? t("unblock") : t("block")}
         ><span>{isBlocked ? <LockOpen size={16}/> : <Ban size={16}/>}</span></button>
-        <button
+        {/* <button
           type="button"
           onClick={() => onDelete(customer)}
           className="text-red-600 hover:text-red-800"
           aria-label={`${t("delete")} ${customer.student_name}`}
-        >
-          <Trash2 size={ 16 } />
-        </button>
+        > */}
+          {/* <Trash2 size={ 16 } />
+        </button> */}
       </td>
     </tr>
   );

@@ -65,7 +65,7 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::ADMINISTRATOR->value])->gr
     Route::post('/customers', [CustomerController::class, 'store']);
     Route::post('/customers/bulk', [CustomerController::class, 'bulkStore']);
     Route::patch('/customer/{customer_id}/edit', [CustomerController::class, 'update']);
-    Route::delete('/customer/{customer_id}/delete', [CustomerController::class, 'delete']);
+    // Route::delete('/customer/{customer_id}/delete', [CustomerController::class, 'delete']);
 
     Route::get('/pin-requests', [ChangePinController::class, 'index']);
     Route::get('/activity-logs', function(){
@@ -80,6 +80,7 @@ Route::middleware(['auth:sanctum', 'role:'. UserRole::SUPERVISOR->value])->group
     Route::get('/supervisor/transactions', [TransactionController::class, 'supervisorIndex']);
     Route::get('/supervisor/transactions/history', [TransactionController::class, 'supervisorHistory']);
     Route::patch('/daily-report/{id}/approve', [DailyReportController::class, 'approve']);
+    Route::patch('/daily-report/{id}/reject', [DailyReportController::class, 'reject']);
 });
 
 Route::middleware(['auth:sanctum', 'role:'. UserRole::TELLER->value])->group(function(){

@@ -8,6 +8,7 @@ import {
   Landmark,
   Receipt,
   UserRound,
+  XCircle,
 } from "lucide-react";
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import api from "../../api/axios";
@@ -32,7 +33,7 @@ export default function ReportDetail() {
   const [report, setReport] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isApproving, setIsApproving] = useState(false);
+  const [isReviewing, setIsReviewing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -70,25 +71,25 @@ export default function ReportDetail() {
     };
   }, [navigate, report_id]);
 
-  const handleApprove = async () => {
-    if (!report || getStatus(report) === "approved") return;
+  const handleReview = async (decision) => {
+    if (!report || getStatus(report.data) !== "draft") return;
 
-    setIsApproving(true);
+    setIsReviewing(true);
     setErrorMessage("");
 
     try {
-      const response = await api.patch(`/api/daily-report/${report_id}/approve`);
+      const response = await api.patch(`/api/daily-report/${report_id}/${decision}`);
       setReport((currentReport) => ({
         ...currentReport,
-        data: response.data?.data ?? { ...currentReport.data, status: "approved" },
+        data: response.data?.data ?? { ...currentReport.data, status: decision === "approve" ? "approved" : "rejected" },
       }));
     } catch (error) {
-      console.error("Failed to approve daily report", error);
+      console.error(`Failed to ${decision} daily report`, error);
       setErrorMessage(
-        error.response?.data?.message || "Daily report could not be approved. Please try again."
+        error.response?.data?.message || "Daily report could not be reviewed. Please try again."
       );
     } finally {
-      setIsApproving(false);
+      setIsReviewing(false);
     }
   };
 
@@ -109,7 +110,7 @@ export default function ReportDetail() {
 
   const status = getStatus(report.data);
   const isSupervisor = String(user?.role ?? "").toLowerCase() === "supervisor";
-  const canApprove = isSupervisor && status !== "approved";
+  const canReview = isSupervisor && status === "draft";
 
   return (
     <div className="min-h-full bg-[#f8f9fa]">
@@ -219,19 +220,32 @@ export default function ReportDetail() {
               <p>
                 {status === "approved"
                   ? t("report_approved_message")
-                  : t("report_pending_message")}
+                  : status === "rejected"
+                    ? t("report_rejected_message")
+                    : t("report_pending_message")}
               </p>
             </div>
-            {canApprove && (
-              <button
-                type="button"
-                onClick={handleApprove}
-                disabled={isApproving}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-gray-900 px-4 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                {isApproving ? t("approving") : t("approve_report")}
-              </button>
+            {canReview && (
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleReview("reject")}
+                  disabled={isReviewing}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-red-200 px-4 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <XCircle className="h-4 w-4" />
+                  {isReviewing ? t("reviewing_report") : t("reject_report")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleReview("approve")}
+                  disabled={isReviewing}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-gray-900 px-4 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  {isReviewing ? t("reviewing_report") : t("approve_report")}
+                </button>
+              </div>
             )}
           </div>
         </section>

@@ -3,7 +3,6 @@ import userIcon from '../assets/userIcon.svg';
 import accountIcon from '../assets/accountIcon.svg';
 import reportIcon from '../assets/reportIcon.svg';
 import journalIcon from '../assets/journalIcon.svg';
-import settingIcon from '../assets/settingIcon.svg';
 
 export const menuItems = [
   {
@@ -42,20 +41,6 @@ export const menuItems = [
     roles: ['administrator', 'admin', 'supervisor'],
   },
   {
-    id: 'settings',
-    titleKey: 'settings',
-    path: '/settings',
-    icon: settingIcon,
-    roles: ['administrator', 'admin'],
-  },
-  {
-    id: 'pin-requests',
-    titleKey: 'pin_requests',
-    path: '/pin-requests',
-    icon: settingIcon,
-    roles: ['administrator', 'admin'],
-  },
-  {
     id: 'transactions',
     titleKey: 'transactions',
     path: '/transactions',
@@ -81,7 +66,7 @@ export const getFilteredMenuItems = (role) => {
   const normalizedRole = (role || '').toLowerCase().trim();
 
   if (normalizedRole === 'administrator' || normalizedRole === 'admin') {
-    return menuItems.filter((item) => ['dashboard', 'users', 'accounts', 'journals', 'pin-requests', 'settings'].includes(item.id));
+    return menuItems.filter((item) => ['dashboard', 'users', 'accounts', 'journals'].includes(item.id));
   }
 
   if (normalizedRole === 'supervisor') {

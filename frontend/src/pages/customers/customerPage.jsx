@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Download, FileSpreadsheet, Plus, X } from "lucide-react";
+import { FileSpreadsheet, Plus, X } from "lucide-react";
 import { useLocation, useOutletContext } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
@@ -87,56 +87,6 @@ const {
     setIsBulkFormOpen(false);
     setCustomerRows([createEmptyCustomer()]);
     setBulkPassword("");
-  };
-
-  const handleExport = async () => {
-    if (filteredCustomers.length === 0) {
-      alert(t("no_accounts_to_export"));
-      return;
-    }
-
-    try {
-      const { default: ExcelJS } = await import("exceljs");
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet("Customer Accounts");
-      worksheet.columns = [
-        { header: "ID", key: "id", width: 10 },
-        { header: "Name", key: "name", width: 30 },
-        { header: "Account number", key: "accountNumber", width: 22 },
-        { header: "Student ID", key: "studentId", width: 18 },
-        { header: "Major", key: "major", width: 16 },
-        { header: "Status", key: "status", width: 16 },
-      ];
-      worksheet.addRows(
-        filteredCustomers.map((customer, index) => ({
-          id: index + 1,
-          name: customer.student_name || "",
-          accountNumber: customer.account_number || "",
-          studentId: customer.student_id || "",
-          major: customer.student_class || "",
-          status: customer.status?.value ?? customer.status ?? "",
-        }))
-      );
-      worksheet.getRow(1).font = { bold: true };
-      worksheet.views = [{ state: "frozen", ySplit: 1 }];
-      worksheet.autoFilter = "A1:F1";
-
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      const downloadUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = `customer-accounts-${new Date().toISOString().slice(0, 10)}.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
-    } catch (error) {
-      console.error("Failed to export customer accounts to Excel", error);
-      alert(t("excel_export_error"));
-    }
   };
 
   const handleExcelImport = async (event) => {
@@ -322,14 +272,6 @@ const {
             </button>
             <button
               type="button"
-              onClick={handleExport}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-gray-500 hover:text-gray-900"
-            >
-              <Download className="h-4 w-4" />
-              {t("export_excel")}
-            </button>
-            <button
-              type="button"
               onClick={() => {
                 setCustomerRows([createEmptyCustomer()]);
                 setBulkPassword("");
@@ -375,7 +317,7 @@ const {
                     key={customer.id}
                     customer={customer}
                     index={startIndex + index}
-                    onDelete={handleDelete}
+                    // onDelete={handleDelete}
                     onBlock={handleBlock}
                     onEdit={(selectedCustomer) => navigate(`/account/${selectedCustomer.id}/edit`)}
                   />

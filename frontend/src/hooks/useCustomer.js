@@ -43,17 +43,17 @@ export const useCustomers = () => {
   }, []);
 
   // 2. Fungsi Hapus (Delete)
-  const handleDelete = async (customer) => {
-    if (!window.confirm(`${t("delete_customer_confirm")} ${customer.student_name}?`)) return;
+  // const handleDelete = async (customer) => {
+  //   if (!window.confirm(`${t("delete_customer_confirm")} ${customer.student_name}?`)) return;
 
-    try {
-      await api.delete(`/api/customer/${customer.id}/delete`);
-      setCustomers((current) => current.filter((item) => item.id !== customer.id));
-    } catch (error) {
-      console.error("Failed to delete customer account", error);
-      alert(t("customer_delete_error"));
-    }
-  };
+  //   try {
+  //     await api.delete(`/api/customer/${customer.id}/delete`);
+  //     setCustomers((current) => current.filter((item) => item.id !== customer.id));
+  //   } catch (error) {
+  //     console.error("Failed to delete customer account", error);
+  //     alert(t("customer_delete_error"));
+  //   }
+  // };
 
   // 3. Fungsi Blokir (Block) - Pakai utility yang udah kita bikin tadi
   const handleBlock = async (customer) => {
@@ -117,7 +117,7 @@ export const useCustomers = () => {
     setCustomers,
     loading,
     isSaving,
-    handleDelete,
+    // handleDelete,
     handleBlock,
     handleBulkSubmit,
     fetchCustomers,

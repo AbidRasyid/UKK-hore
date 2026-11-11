@@ -219,6 +219,7 @@ export default function SupervisorDashboard() {
                   <span className="font-mono text-2xl font-bold text-gray-900">
                     {formatCurrency(Number(report.total_deposits || 0) + Number(report.total_withdrawals || 0), locale)}
                   </span>
+                  <p className="mt-1 text-xs text-gray-500">{t('report_gross_volume')}</p>
                 </div>
 
                 {/* Bottom Row: Teller & Review button */}

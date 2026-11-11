@@ -290,31 +290,31 @@ class CustomerController extends Controller
         ], 200);
     }
 
-    public function delete(int $customer_id):JsonResponse
-    {
-        try {
-            $customer = Customer::findOrFail($customer_id);
-            $customer->delete();
-            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
-            LogService::record(
-                ActivityAction::CUSTOMER_DELETED,
-                "Customer deleted by {$actor} on Customer ID {$customer->id}. Status: Success. Customer account deleted."
-            );
+    // public function delete(int $customer_id):JsonResponse
+    // {
+    //     try {
+    //         $customer = Customer::findOrFail($customer_id);
+    //         $customer->delete();
+    //         $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+    //         LogService::record(
+    //             ActivityAction::CUSTOMER_DELETED,
+    //             "Customer deleted by {$actor} on Customer ID {$customer->id}. Status: Success. Customer account deleted."
+    //         );
 
-            return response()->json([
-                "message" => "customer has been deleted successfully"
-            ], 200);
-        } catch (\Throwable $th) {
-            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
-            LogService::record(
-                ActivityAction::CUSTOMER_DELETED,
-                "Customer deleted by {$actor} on Customer ID {$customer_id}. Status: Failed. {$th->getMessage()}"
-            );
+    //         return response()->json([
+    //             "message" => "customer has been deleted successfully"
+    //         ], 200);
+    //     } catch (\Throwable $th) {
+    //         $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+    //         LogService::record(
+    //             ActivityAction::CUSTOMER_DELETED,
+    //             "Customer deleted by {$actor} on Customer ID {$customer_id}. Status: Failed. {$th->getMessage()}"
+    //         );
 
-            return response()->json([
-                "message" => "customer failed to delete",
-            ], 400);
-        }
-    }
+    //         return response()->json([
+    //             "message" => "customer failed to delete",
+    //         ], 400);
+    //     }
+    // }
 
 }

@@ -3,23 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\enum\ActivityAction;
-use Illuminate\Http\Request;
+use App\enum\ReportStatus;
 use App\Models\DailyReport;
 use App\Models\User;
 use App\Services\LogService;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DailyReportController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         try {
             $data = DailyReport::query()
                 ->with('user:id,fullname')
                 ->whereNotNull('closing_balance')
                 ->get();
+
             return response()->json([
                 'message' => 'data has been loaded successfully',
-                'data' => $data
+                'data' => $data,
             ], 200);
         } catch (\Throwable $th) {
             return response()->json([
@@ -69,44 +73,60 @@ class DailyReportController extends Controller
         } catch (\Throwable $th) {
             return response()->json([
                 'message' => 'data not found',
-                'error' => $th->getMessage()
+                'error' => $th->getMessage(),
             ], 404);
         }
     }
 
     public function approve(int $daily_report_id, Request $request)
     {
-        try {
-            $dailyreport = DailyReport::findOrFail($daily_report_id);
-            if ($dailyreport->closing_balance === null) {
-                return response()->json([
-                    'message' => 'An open shift cannot be approved before it is closed.',
-                ], 422);
-            }
-            $dailyreport->update([
-                'status' => 'approved',
-                'approved_by' => $request->user()->id,
-            ]);
-            $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
-            LogService::record(
-                ActivityAction::REPORT_APPROVED,
-                "Report approved by {$actor} on Daily Report ID {$dailyreport->id}. Status: Success. Daily report approved."
-            );
+        return $this->review($daily_report_id, $request, ReportStatus::APPROVED);
+    }
 
-            return response()->json([
-                'message' => 'Daily report approved successfully',
-                'data' => $dailyreport
-            ], 200);
-        } catch (\Throwable $th) {
-        $actor = Auth::user()?->fullname ?? Auth::id() ?? 'Unknown';
+    public function reject(int $daily_report_id, Request $request): JsonResponse
+    {
+        return $this->review($daily_report_id, $request, ReportStatus::REJECTED);
+    }
+
+    private function review(int $daily_report_id, Request $request, ReportStatus $status): JsonResponse
+    {
+        $result = DB::transaction(function () use ($daily_report_id, $request, $status): array {
+            $dailyReport = DailyReport::query()->lockForUpdate()->findOrFail($daily_report_id);
+
+            if ($dailyReport->closing_balance === null) {
+                return ['error' => 'An open shift cannot be reviewed before it is closed.', 'status' => 422];
+            }
+
+            if ($dailyReport->status !== ReportStatus::DRAFT->value) {
+                return ['error' => 'This daily report has already been reviewed.', 'status' => 409];
+            }
+
+            $dailyReport->update([
+                'status' => $status->value,
+                'approved_by' => $status === ReportStatus::APPROVED ? $request->user()->id : null,
+            ]);
+
+            return ['data' => $dailyReport->fresh(), 'status' => 200];
+        });
+
+        if (isset($result['error'])) {
+            return response()->json(['message' => $result['error']], $result['status']);
+        }
+
+        $isApproved = $status === ReportStatus::APPROVED;
+        $action = $isApproved ? ActivityAction::REPORT_APPROVED : ActivityAction::REPORT_REJECTED;
+        $verb = $isApproved ? 'approved' : 'rejected';
+        $actor = $request->user()->fullname;
         LogService::record(
-            ActivityAction::REPORT_APPROVED,
-            "Report approved by {$actor} on Daily Report ID {$daily_report_id}. Status: Failed. {$th->getMessage()}"
+            $action,
+            "Report {$verb} by {$actor} on Daily Report ID {$daily_report_id}."
         );
 
         return response()->json([
-                'message' => 'data not found',
-            ], 404);
-        }
+            'message' => $isApproved
+                ? 'Daily report approved successfully.'
+                : 'Daily report rejected successfully.',
+            'data' => $result['data'],
+        ]);
     }
 }

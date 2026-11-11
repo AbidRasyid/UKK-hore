@@ -4,10 +4,13 @@ import { purgeBrowserStorageCredentials } from "../utils/cookies";
 const defaultApiUrl =
   typeof window === "undefined"
     ? "http://127.0.0.1:8000"
-    : `${window.location.protocol}//${window.location.hostname}:8000`;
+    : window.location.origin;
+
+const configuredApiUrl = import.meta.env.VITE_API_URL || defaultApiUrl;
+const normalizedApiUrl = configuredApiUrl.endsWith("/") ? configuredApiUrl.slice(0, -1) : configuredApiUrl;
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || defaultApiUrl,
+  baseURL: normalizedApiUrl,
   withCredentials: true,
   withXSRFToken: true,
   headers: {

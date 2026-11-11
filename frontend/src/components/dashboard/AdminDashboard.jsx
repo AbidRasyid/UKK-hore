@@ -1,15 +1,8 @@
 import '../../utils/echo';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Users, 
-  User, 
-  CreditCard, 
-  AlertTriangle, 
-  TrendingUp, 
-  Plus, 
-  Minus
-} from 'lucide-react';
+// eslint-disable-next-line no-unused-vars
+import { Users, User, CreditCard, Plus } from 'lucide-react';
 import api from '../../api/axios';
 import { useLanguage } from '../../hooks/useLanguage';
 
@@ -19,65 +12,45 @@ export default function AdminDashboard() {
   const [totalUsers, setTotalUsers] = useState(null);
   const [totalCustomers, setTotalCustomers] = useState(null);
   const [activeBankAccounts, setActiveBankAccounts] = useState(null);
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
 
     const fetchData = async () => {
-      try {
-        // Fetch logs from /api/activity-logs
-        const logsPromise = await api.get('/api/activity-logs').catch(() => null);
-        // Fetch users from /api/users
-        const usersPromise = api.get('/api/users').catch(() => null);
-        // Fetch customers from /api/customers
-        const customersPromise = api.get('/api/customers').catch(() => null);
+      const [usersResult, customersResult, logsResult] = await Promise.allSettled([
+        api.get('/api/users'),
+        api.get('/api/customers'),
+        api.get('/api/activity-logs'),
+      ]);
 
-        const [usersRes, customersRes, logsRes] = await Promise.all([usersPromise, customersPromise, logsPromise]);
+      if (!isMounted) return;
 
-        if (!isMounted) return;
+      const users = usersResult.status === 'fulfilled' ? usersResult.value.data?.data : null;
+      setTotalUsers(Array.isArray(users) ? users.length : null);
 
-        if (usersRes?.data?.data && Array.isArray(usersRes.data.data)) {
-          const usersList = usersRes.data.data;
-          // Sum total operational users
-          setTotalUsers(usersList.length);
-        } else {
-          setTotalUsers(12450);
-        }
-
-        if (customersRes?.data?.data && Array.isArray(customersRes.data.data)) {
-          const customersList = customersRes.data.data;
-          setTotalCustomers(customersList.length);
-
-          // Sum active bank accounts based on status
-          const activeCount = customersList.filter(
-            (c) => String(c.status).toLowerCase() === 'active'
-          ).length;
-          setActiveBankAccounts(activeCount);
-        } else {
-          setTotalCustomers(845901);
-          setActiveBankAccounts(1102440);
-        }
-
-        if (logsRes?.data?.data && Array.isArray(logsRes.data.data)){
-          setLogs(logsRes.data.data)
-        } else {
-          setLogs(null)
-        }
-      } catch {
-        if (!isMounted) return;
-        setTotalUsers(12450);
-        setTotalCustomers(845901);
-        setActiveBankAccounts(1102440);
+      const customers = customersResult.status === 'fulfilled'
+        ? customersResult.value.data?.data
+        : null;
+      if (Array.isArray(customers)) {
+        setTotalCustomers(customers.length);
+        setActiveBankAccounts(
+          customers.filter((customer) => String(customer.status).toLowerCase() === 'active').length
+        );
+      } else {
+        setTotalCustomers(null);
+        setActiveBankAccounts(null);
       }
+
+      const activityLogs = logsResult.status === 'fulfilled'
+        ? logsResult.value.data?.data
+        : null;
+      setLogs(Array.isArray(activityLogs) ? activityLogs : null);
     };
 
-    // eslint-disable-next-line no-unused-vars
-    const channel = window.Echo.private('admin.activity-logs')
+    window.Echo.private('admin.activity-logs')
       .listen('ActivityLogged', (e) => {
-        console.log('log baru masuk', e);
-
-        setLogs((prevLogs) => [e.log, ...prevLogs]);
+        setLogs((previousLogs) => [e.log, ...(Array.isArray(previousLogs) ? previousLogs : [])]);
       })
 
     fetchData();
@@ -88,13 +61,7 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  // Format large numbers with commas
-  const formatCount = (val, fallback) => {
-    if (val === null || val === undefined) {
-      return Number(fallback).toLocaleString('en-US');
-    }
-    return Number(val).toLocaleString('en-US');
-  };
+  const formatCount = (value) => value === null ? '—' : value.toLocaleString('en-US');
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -120,7 +87,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* 2x2 Metric Cards Grid */}
+      {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* TOTAL USERS */}
         <div className="bg-white border border-[#e5e7eb] rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
@@ -132,12 +99,8 @@ export default function AdminDashboard() {
           </div>
           <div className="mt-3">
             <span className="text-3xl font-bold text-gray-900 tracking-tight font-sans">
-              {formatCount(totalUsers, 12450)}
+              {formatCount(totalUsers)}
             </span>
-          </div>
-          <div className="mt-2.5 flex items-center gap-1.5 text-xs font-medium text-emerald-600 font-sans">
-            <TrendingUp className="w-3.5 h-3.5 stroke-[2.2]" />
-            <span>+4.2% {t('from_last_week')}</span>
           </div>
         </div>
 
@@ -151,12 +114,8 @@ export default function AdminDashboard() {
           </div>
           <div className="mt-3">
             <span className="text-3xl font-bold text-gray-900 tracking-tight font-sans">
-              {formatCount(totalCustomers, 845901)}
+              {formatCount(totalCustomers)}
             </span>
-          </div>
-          <div className="mt-2.5 flex items-center gap-1.5 text-xs font-medium text-emerald-600 font-sans">
-            <TrendingUp className="w-3.5 h-3.5 stroke-[2.2]" />
-            <span>+1.8% {t('from_last_week')}</span>
           </div>
         </div>
 
@@ -170,31 +129,8 @@ export default function AdminDashboard() {
           </div>
           <div className="mt-3">
             <span className="text-3xl font-bold text-gray-900 tracking-tight font-sans">
-              {formatCount(activeBankAccounts, 1102440)}
+              {formatCount(activeBankAccounts)}
             </span>
-          </div>
-          <div className="mt-2.5 flex items-center gap-1.5 text-xs font-normal text-gray-500 font-sans">
-            <Minus className="w-3.5 h-3.5 stroke-2" />
-            <span>{t('steady_volume')}</span>
-          </div>
-        </div>
-
-        {/* SYSTEM ACTIVITY ALERTS */}
-        <div className="bg-white border border-[#e5e7eb] rounded-lg p-6 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 tracking-wider uppercase font-sans">
-              {t('system_activity_alerts')}
-            </span>
-            <AlertTriangle className="w-5 h-5 text-amber-500 stroke-2" />
-          </div>
-          <div className="mt-3">
-            <span className="text-3xl font-bold text-gray-900 tracking-tight font-sans">
-              42
-            </span>
-          </div>
-          <div className="mt-2.5 flex items-center gap-1.5 text-xs font-medium text-[#b45309] font-sans">
-            <TrendingUp className="w-3.5 h-3.5 stroke-[2.2]" />
-            <span>+12 {t('alerts_pending_review')}</span>
           </div>
         </div>
       </div>
@@ -238,7 +174,19 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e5e7eb]/80">
-              {logs.map((log, index) => {
+              {logs === null ? (
+                <tr>
+                  <td colSpan="5" className="py-8 px-6 text-center text-sm text-gray-500">
+                    {t('dashboard_data_unavailable')}
+                  </td>
+                </tr>
+              ) : logs.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="py-8 px-6 text-center text-sm text-gray-500">
+                    {t('no_recent_activity')}
+                  </td>
+                </tr>
+              ) : logs.map((log, index) => {
                 let badgeClass = '';
                 if (log.statusType === 'completed') {
                   badgeClass = 'bg-[#15803d] text-white';
