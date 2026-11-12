@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-// eslint-disable-next-line no-unused-vars
 import { TrendingUp } from 'lucide-react';
 import api from '../../api/axios';
 import { useLanguage } from '../../hooks/useLanguage';
@@ -9,7 +8,7 @@ import { formatCurrency, formatDate } from '../../utils/format';
 /**
  * Custom Pending Report Clipboard Icon matching supervisor_dashboard.png
  */
-// eslint-disable-next-line no-unused-vars
+ 
 const PendingReportIcon = ({ className = "w-6 h-6 text-[#ca8a04]" }) => (
   <svg
     className={className}

@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-unused-vars
+ 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "../hooks/useLanguage";
 

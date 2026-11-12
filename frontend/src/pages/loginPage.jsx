@@ -30,7 +30,7 @@ const handleLogin = async (e) => {
     await api.post("/api/login", { username, password });
 
     navigate("/");
-  // eslint-disable-next-line no-unused-vars
+   
   } catch (e) {
     setErrorMsg(t("invalid_credentials"));
   } finally {
