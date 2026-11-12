@@ -1,7 +1,8 @@
 import api from "../api/axios";
 import { dictionary } from "./dictionary";
+import { getSafeApiMessage } from "./getSafeApiMessage";
 
-export const executeToogleStatus = async (endpoint, id, nextStatus) => {
+export const executeToogleStatus = async (endpoint, id, nextStatus, onSuccess, onError) => {
   const lang = localStorage.getItem("app_lang") || "en";
   const dict = dictionary[lang] || dictionary.en;
   const confirmMsg =
@@ -12,10 +13,11 @@ export const executeToogleStatus = async (endpoint, id, nextStatus) => {
   if (!confirm(confirmMsg)) return false;
   try {
     await api.patch(`${endpoint}/${id}/edit`, { status: nextStatus });
-    alert(dict.user_status_updated);
+    onSuccess?.(dict.user_status_updated);
     return true;
   } catch (error) {
     console.error("Failed to toggle status", error);
+    onError?.(getSafeApiMessage(error, dict.user_status_update_error));
     return false;
   }
 };

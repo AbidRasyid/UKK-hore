@@ -88,7 +88,7 @@ class ShiftController extends Controller
     public function open(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'opening_balance' => ['required', 'integer', 'min:0'],
+            'opening_balance' => ['required', 'numeric', 'min:0'],
             'teller_id' => ['sometimes', 'integer', 'exists:tellers,id'],
             'teller_ids' => ['sometimes', 'array', 'min:1'],
             'teller_ids.*' => ['required', 'integer', 'distinct', 'exists:tellers,id'],
@@ -188,8 +188,8 @@ class ShiftController extends Controller
     public function close(Request $request, int $shiftId): JsonResponse
     {
         $validated = $request->validate([
-            'closing_balance' => ['required', 'integer', 'min:0'],
-            'system_balance' => ['required', 'integer', 'min:0'],
+            'closing_balance' => ['required', 'numeric', 'min:0'],
+            'system_balance' => ['required', 'numeric', 'min:0'],
             'cash_denominations' => ['required', 'array', 'min:1'],
             'cash_denominations.*.cash_denomination_id' => [
                 'required',

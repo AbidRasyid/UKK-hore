@@ -15,8 +15,8 @@ return new class extends Migration
         Schema::create('shifts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('teller_id')->constrained('tellers')->onDelete('cascade');
-            $table->integer('opening_balance');
-            $table->integer('closing_balance')->nullable(); 
+            $table->decimal('opening_balance', 15, 2);
+            $table->decimal('closing_balance', 15, 2)->nullable();
             $table->timestamp('opened_at');
             $table->timestamp('closed_at')->nullable();
             $table->enum('status', array_column(ShiftStatus::cases(), 'value'))->default(ShiftStatus::OPEN->value);

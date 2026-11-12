@@ -9,6 +9,10 @@ class AccountingJournal extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'amount' => 'decimal:2',
+    ];
+
     protected $fillable = [
         'transaction_id',
         'account_code',

@@ -5,11 +5,14 @@ import api from "../../api/axios";
 import { useLanguage } from "../../hooks/useLanguage";
 import SearchableMajorSelect from "../../components/accounts/SearchableMajorSelect";
 import { MAJORS, normalizeMajor } from "../../utils/majors";
+import { useToast } from "../../hooks/useToast";
+import { getSafeApiMessage } from "../../utils/getSafeApiMessage";
 
 export default function CustomerFormPage() {
   const { customer_id } = useParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { success, error: showError } = useToast();
   const isEdit = Boolean(customer_id);
 
   const [isLoading, setIsLoading] = useState(isEdit);
@@ -65,22 +68,22 @@ export default function CustomerFormPage() {
 
 
     if (!payload.student_name || !payload.student_id || !payload.student_class) {
-      alert(t("err_name_id_class_required"));
+      showError(t("err_name_id_class_required"));
       return;
     }
 
     if (!MAJORS.includes(payload.student_class)) {
-      alert(t("select_major"));
+      showError(t("select_major"));
       return;
     }
 
     if (!isEdit && !payload.password) {
-      alert(t("err_password_required"));
+      showError(t("err_password_required"));
       return;
     }
 
     if (payload.pin && !/^\d{6}$/.test(payload.pin)) {
-      alert(t("err_pin_must_be_6"));
+      showError(t("err_pin_must_be_6"));
       return;
     }
 
@@ -101,15 +104,14 @@ export default function CustomerFormPage() {
         await api.post("/api/customers", payload);
       }
 
+      success(t("customer_account_saved"));
       navigate("/accounts");
     } catch (error) {
       console.error("Failed to save customer account", error);
       if (error.response?.data?.error) {
-        alert(`Backend Error: ${error.response.data.error}`);
-      } else if (error.response?.data?.message) {
-        alert(error.response.data.message);
+        showError(t("customer_account_save_error"));
       } else {
-        alert(t("customer_account_save_error"));
+        showError(getSafeApiMessage(error, t("customer_account_save_error")));
       }
     } finally {
       setIsSubmitting(false);

@@ -9,6 +9,7 @@ import useClientPagination from "../../hooks/useClientPagination";
 import useListFilters from "../../hooks/useListFilters";
 import FilterExportCard from "../../components/FilterExportCard";
 import { exportToExcel } from "../../utils/exportToExcel";
+import { getSafeApiMessage } from "../../utils/getSafeApiMessage";
 
 const statusStyles = {
   approved: "bg-emerald-50 text-emerald-700",
@@ -47,9 +48,7 @@ export default function TellerReportPage() {
       setReports(data);
     } catch (error) {
       console.error("Failed to load teller daily reports", error);
-      setErrorMessage(
-        error.response?.data?.message || t("daily_reports_load_error")
-      );
+      setErrorMessage(getSafeApiMessage(error, t("daily_reports_load_error")));
     } finally {
       setIsLoading(false);
     }
@@ -78,10 +77,7 @@ export default function TellerReportPage() {
       } catch (error) {
         console.error("Failed to load teller daily reports", error);
         if (isMounted) {
-          setErrorMessage(
-            error.response?.data?.message ||
-              t("daily_reports_load_error")
-          );
+          setErrorMessage(getSafeApiMessage(error, t("daily_reports_load_error")));
         }
       } finally {
         if (isMounted) setIsLoading(false);

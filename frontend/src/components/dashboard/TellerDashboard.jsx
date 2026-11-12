@@ -5,6 +5,7 @@ import { useLanguage } from '../../hooks/useLanguage';
 import { QrCode, Search } from 'lucide-react';
 import QrScannerModal from '../accounts/QrScannerModal';
 import CurrencyInput from 'react-currency-input-field';
+import { getSafeApiMessage } from '../../utils/getSafeApiMessage';
 
 export default function TellerDashboard() {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ export default function TellerDashboard() {
       applyShiftInfo(response.data);
     } catch (error) {
       console.error("Failed to load teller shift", error);
-      setShiftError(error.response?.data?.message || "Unable to load your shift.");
+      setShiftError(getSafeApiMessage(error, "Unable to load your shift."));
     } finally {
       setShiftLoading(false);
     }
@@ -52,7 +53,7 @@ export default function TellerDashboard() {
       .catch((error) => {
         console.error("Failed to load teller shift", error);
         if (isMounted) {
-          setShiftError(error.response?.data?.message || "Unable to load your shift.");
+          setShiftError(getSafeApiMessage(error, "Unable to load your shift."));
         }
       })
       .finally(() => {
@@ -87,7 +88,7 @@ export default function TellerDashboard() {
       await loadShift();
     } catch (error) {
       console.error("Failed to open teller shift", error);
-      setShiftError(error.response?.data?.message || "Unable to open your shift.");
+      setShiftError(getSafeApiMessage(error, "Unable to open your shift."));
     } finally {
       setIsOpeningShift(false);
     }
@@ -350,7 +351,7 @@ export default function TellerDashboard() {
           onClose={() => setIsScannerOpen(false)}
           onError={(error) => {
             console.error("QR scanner error", error);
-            setErrorMessage(error.message || t("qr_scanner_error"));
+            setErrorMessage(t("qr_scanner_error"));
           }}
           onAccountDetected={handleQrSuccess}
         />

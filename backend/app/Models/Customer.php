@@ -37,6 +37,7 @@ class Customer extends Authenticatable
         return [
             'password' => 'hashed',
             'pin' => 'hashed',
+            'balance' => 'decimal:2',
             'status' => Status::class,
         ];
     }

@@ -6,6 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class DailyReport extends Model
 {
+    protected $casts = [
+        'opening_balance' => 'decimal:2',
+        'closing_balance' => 'decimal:2',
+        'total_deposits' => 'decimal:2',
+        'total_withdrawals' => 'decimal:2',
+        'system_balance' => 'decimal:2',
+        'physical_balance' => 'decimal:2',
+    ];
+
     protected $fillable = [
         'user_id',
         'shift_id',

@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { formatCurrency } from "../../utils/format";
 import CurrencyInput from "react-currency-input-field";
+import { getSafeApiMessage } from "../../utils/getSafeApiMessage";
 
 export default function DailyReportFormPage() {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ export default function DailyReportFormPage() {
       } catch (error) {
         console.error("Failed to load shift for closing", error);
         if (isMounted) {
-          setErrorMessage(error.response?.data?.message || "Unable to load your open shift.");
+          setErrorMessage(getSafeApiMessage(error, "Unable to load your open shift."));
         }
       } finally {
         if (isMounted) setIsLoading(false);
@@ -84,7 +85,7 @@ export default function DailyReportFormPage() {
       navigate("/reports");
     } catch (error) {
       console.error("Failed to close teller shift", error);
-      setErrorMessage(error.response?.data?.message || "Unable to close your shift.");
+      setErrorMessage(getSafeApiMessage(error, "Unable to close your shift."));
     } finally {
       setIsSubmitting(false);
     }

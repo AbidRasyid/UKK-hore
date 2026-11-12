@@ -3,6 +3,8 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { useLanguage } from "../../hooks/useLanguage";
+import { useToast } from "../../hooks/useToast";
+import { getSafeApiMessage } from "../../utils/getSafeApiMessage";
 
 const createEmptyUser = () => ({
   fullname: "",
@@ -17,6 +19,7 @@ const createEmptyUser = () => ({
 export default function UserBulkCreatePage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { success, error: showError } = useToast();
   const [users, setUsers] = useState([createEmptyUser()]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -40,24 +43,24 @@ export default function UserBulkCreatePage() {
       !user.fullname || !user.username || !user.password
       || (user.role === "teller" && (!user.class || !user.phone_number))
     )) {
-      alert(t("bulk_user_required"));
+      showError(t("bulk_user_required"));
       return;
     }
 
     const usernames = rows.map((user) => user.username);
     if (new Set(usernames).size !== usernames.length) {
-      alert(t("bulk_user_duplicate"));
+      showError(t("bulk_user_duplicate"));
       return;
     }
 
     setIsSubmitting(true);
     try {
       await api.post("/api/users/bulk", { users: rows });
-      alert(`${rows.length} ${t("users_added_successfully")}`);
+      success(`${rows.length} ${t("users_added_successfully")}`);
       navigate("/users");
     } catch (error) {
       console.error("Failed to add users", error);
-      alert(error.response?.data?.message || t("err_data_send_failed"));
+      showError(getSafeApiMessage(error, t("err_data_send_failed")));
     } finally {
       setIsSubmitting(false);
     }

@@ -11,6 +11,7 @@ import { normalizeMajor } from "../../utils/majors";
 import { parseAttendanceRoster } from "../../utils/importAttendanceRoster";
 import Pagination from "../../components/Pagination";
 import useClientPagination from "../../hooks/useClientPagination";
+import { useToast } from "../../hooks/useToast";
 
 const normalize = (value) => String(value ?? "").toLowerCase().trim();
 
@@ -28,6 +29,7 @@ export default function CustomerPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
+  const { error: showError } = useToast();
   const [headerSearch, setHeaderSearch] = useState(() => {
     const params = new URLSearchParams(location.search);
     return params.get("s") || location.state?.search || "";
@@ -108,7 +110,7 @@ const {
       await workbook.xlsx.load(await file.arrayBuffer());
       const worksheet = workbook.worksheets[0];
       if (!worksheet) {
-        alert(t("excel_no_rows"));
+        showError(t("excel_no_rows"));
         return;
       }
 
@@ -180,12 +182,12 @@ const {
       });
 
       if (!rows.length || rows.every((row) => Object.values(row).every((value) => !value))) {
-        alert(t("excel_no_rows"));
+        showError(t("excel_no_rows"));
         return;
       }
 
       if (rows.length > 100) {
-        alert(t("bulk_customer_limit"));
+        showError(t("bulk_customer_limit"));
         return;
       }
 
@@ -194,13 +196,13 @@ const {
         rows.some((row) => !row[field])
       );
       if (missingRequiredFields.length) {
-        alert(`${t("missing_imported_values")} ${missingRequiredFields.join(", ")}`);
+        showError(`${t("missing_imported_values")} ${missingRequiredFields.join(", ")}`);
         return;
       }
 
       const invalidPin = rows.some((row) => row.pin && !/^\d{6}$/.test(row.pin));
       if (invalidPin) {
-        alert(t("pin_must_be_6_digits"));
+        showError(t("pin_must_be_6_digits"));
         return;
       }
 
@@ -208,7 +210,7 @@ const {
       setIsBulkFormOpen(true);
     } catch (error) {
       console.error("Failed to import customer Excel file", error);
-      alert(t("excel_read_error"));
+      showError(t("excel_read_error"));
     }
   };
 
@@ -218,7 +220,7 @@ const {
       .flatMap((group) => group.students);
     if (!rows.length) return;
     if (rows.length > 100) {
-      alert(t("bulk_customer_limit"));
+      showError(t("bulk_customer_limit"));
       return;
     }
     setCustomerRows(rows);

@@ -3,11 +3,14 @@ import api from "../../api/axios";
 import { ArrowLeft, BriefcaseBusiness, Check, LockKeyhole, Mail, ShieldCheck, UserRound, Eye, EyeClosed } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "../../hooks/useLanguage";
+import { useToast } from "../../hooks/useToast";
+import { getSafeApiMessage } from "../../utils/getSafeApiMessage";
 
 export default function UserFormPage(){
     const { user_id } = useParams();
     const navigate = useNavigate();
     const { t } = useLanguage();
+    const { success, error: showError } = useToast();
     const isEdit = Boolean(user_id);
 
     const [id, setId] = useState('');
@@ -56,14 +59,14 @@ export default function UserFormPage(){
         const trimmedPhoneNumber = phoneNumber.trim();
 
         if (!trimmedUsername || !trimmedFullname || (!isEdit && !trimmedPassword)) {
-            alert(isEdit
+            showError(isEdit
                 ? t("err_name_username_required")
                 : t("err_name_username_pw_required"));
             return;
         }
 
         if (isTeller && (!trimmedClass || !trimmedPhoneNumber)) {
-            alert(t("err_teller_fields_required"));
+            showError(t("err_teller_fields_required"));
             return;
         }
 
@@ -77,7 +80,7 @@ export default function UserFormPage(){
             );
 
             if (usernameExists) {
-                alert(t("err_username_taken"));
+                showError(t("err_username_taken"));
                 return;
             }
 
@@ -104,15 +107,14 @@ export default function UserFormPage(){
 
                 console.log(response)
             }
+            success(t("user_saved_successfully"));
             navigate('/users')
         } catch (err) {
             console.error(err);
             if (err.response?.data?.error) {
-                alert("Backend Error: " + err.response.data.error);
-            } else if (err.response?.data?.message) {
-                alert(err.response.data.message);
+                showError(t("err_data_send_failed"));
             } else {
-            alert(t("err_data_send_failed"));
+            showError(getSafeApiMessage(err, t("err_data_send_failed")));
             }
         } finally {
             setIsSubmitting(false)

@@ -18,11 +18,11 @@
                     ->constrained()
                     ->restrictOnDelete();
                 $table->date('report_date'); 
-                $table->unsignedBigInteger('opening_balance')->default(0); 
-                $table->unsignedBigInteger('total_deposits')->default(0);
-                $table->unsignedBigInteger('total_withdrawals')->default(0);
-                $table->unsignedBigInteger('system_balance')->default(0);
-                $table->unsignedBigInteger('physical_balance')->default(0);
+                $table->decimal('opening_balance', 15, 2)->default(0);
+                $table->decimal('total_deposits', 15, 2)->default(0);
+                $table->decimal('total_withdrawals', 15, 2)->default(0);
+                $table->decimal('system_balance', 15, 2)->default(0);
+                $table->decimal('physical_balance', 15, 2)->default(0);
                 $table->enum('status', ReportStatus::cases())->default(ReportStatus::DRAFT->value);
                 $table->foreignId('approved_by')->nullable()->constrained('users')->restrictOnDelete()->default(null);
                 $table->timestamps();

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../api/axios.js";
+import { getSafeApiMessage } from "../utils/getSafeApiMessage";
 
 const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -33,7 +34,7 @@ const ResetPasswordPage = () => {
       window.setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
       setIsError(true);
-      setMessage(error.response?.data?.message || "Unable to reset your password.");
+      setMessage(getSafeApiMessage(error, "Unable to reset your password."));
     } finally {
       setIsLoading(false);
     }

@@ -11,6 +11,9 @@ class Transaction extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'amount' => 'decimal:2',
+    ];
 
     protected $fillable = [
         'customer_id',

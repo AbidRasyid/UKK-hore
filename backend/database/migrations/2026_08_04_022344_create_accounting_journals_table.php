@@ -23,7 +23,7 @@ return new class extends Migration
 
     $table->enum('position', array_column(Positions::cases(), 'value'));
 
-    $table->unsignedBigInteger('amount');
+    $table->decimal('amount', 15, 2);
 
     $table->timestamps();   
         });

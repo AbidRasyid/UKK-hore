@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('student_id')->unique();
             $table->string('student_name');
             $table->enum('student_class', array_column(Majors::cases(), 'value'));
-            $table->unsignedBigInteger('balance')->default(10000);
+            $table->decimal('balance', 15, 2)->default(10000);
             // $table->string('password');
             $table->string('pin');
             $table->enum('status', array_column(Status::cases(), 'value'))->default(Status::ACTIVE->value);

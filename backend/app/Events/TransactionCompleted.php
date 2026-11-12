@@ -33,21 +33,21 @@ class TransactionCompleted implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('teller' . $this->payload['teller_id']),
+            new PrivateChannel('teller.' . $this->payload['teller_id']),
+            new PrivateChannel('customer.' . $this->payload['transaction']->customer_id),
         ];
     }
 
     public function broadcastAs(): string
     {
-        return 'Transaction completed';
+        return 'TransactionCompleted';
     }
 
     public function broadcastWith(): array
     {
         return [
-            'status' => 'success',
-            'message' => 'transaction completed',
-            'transaction' => $this->payload
+            'customer_id' => $this->payload['transaction']->customer_id,
+            'transaction_id' => $this->payload['transaction']->id,
         ];
     }
 }

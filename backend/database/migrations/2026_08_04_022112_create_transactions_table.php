@@ -27,7 +27,7 @@ return new class extends Migration
         ->default(null);
     $table->date('transaction_date');
     $table->enum('transaction_type', array_column(TransactionTypes::cases(), 'value'));
-    $table->unsignedBigInteger('amount');
+    $table->decimal('amount', 15, 2);
 
     $table->timestamps();
     });

@@ -208,7 +208,7 @@ class TransactionController extends Controller
     {
         $validated = $request->validate([
             'transaction_type' => ['required', 'in:deposit,withdrawal'],
-            'amount' => ['required', 'integer', 'min:1']
+            'amount' => ['required', 'numeric', 'min:0.01']
         ]);
 
         $validated['user_id'] = Auth::id();

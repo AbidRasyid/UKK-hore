@@ -16,6 +16,7 @@ import { formatCurrency, formatDate } from "../../utils/format";
 import { useLanguage } from "../../hooks/useLanguage";
 import Pagination from "../../components/Pagination";
 import useClientPagination from "../../hooks/useClientPagination";
+import { getSafeApiMessage } from "../../utils/getSafeApiMessage";
 
 const getStatus = (report) => String(report?.status ?? "pending").toLowerCase();
 
@@ -85,9 +86,7 @@ export default function ReportDetail() {
       }));
     } catch (error) {
       console.error(`Failed to ${decision} daily report`, error);
-      setErrorMessage(
-        error.response?.data?.message || "Daily report could not be reviewed. Please try again."
-      );
+      setErrorMessage(getSafeApiMessage(error, "Daily report could not be reviewed. Please try again."));
     } finally {
       setIsReviewing(false);
     }

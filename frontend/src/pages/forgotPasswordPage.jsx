@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios.js";
+import { getSafeApiMessage } from "../utils/getSafeApiMessage";
 
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
@@ -15,13 +16,13 @@ const ForgotPasswordPage = () => {
     setMessage("");
 
     try {
-      const response = await api.post("/api/customer/forgot-password", { email });
+      await api.post("/api/customer/forgot-password", { email });
       setIsError(false);
-      setMessage(response.data.message);
+      setMessage("If the account is eligible, a reset code will be sent.");
       navigate(`/reset-password?email=${encodeURIComponent(email)}`);
     } catch (error) {
       setIsError(true);
-      setMessage(error.response?.data?.message || "Unable to send a reset code.");
+      setMessage(getSafeApiMessage(error, "Unable to send a reset code."));
     } finally {
       setIsLoading(false);
     }

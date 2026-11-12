@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import api from "../api/axios";
 import { executeToogleStatus } from "../utils/toogleStatus";
 import { useLanguage } from "./useLanguage";
+import { useToast } from "./useToast";
 import { MAJORS, normalizeMajor } from "../utils/majors";
+import { getSafeApiMessage } from "../utils/getSafeApiMessage";
 
 export const useCustomers = () => {
   const { t } = useLanguage();
+  const { success, error: showError } = useToast();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -51,7 +54,6 @@ export const useCustomers = () => {
   //     setCustomers((current) => current.filter((item) => item.id !== customer.id));
   //   } catch (error) {
   //     console.error("Failed to delete customer account", error);
-  //     alert(t("customer_delete_error"));
   //   }
   // };
 
@@ -60,7 +62,13 @@ export const useCustomers = () => {
     const isBlocked = customer.status === 'blocked';
     const nextStatus = isBlocked ? "active" : "blocked";
 
-    const isSuccess = await executeToogleStatus('/api/customer', customer.id, nextStatus);
+    const isSuccess = await executeToogleStatus(
+      '/api/customer',
+      customer.id,
+      nextStatus,
+      success,
+      showError
+    );
 
     if (isSuccess) {
       setCustomers(prev => prev.map(c => c.id == customer.id ? { ...c, status: nextStatus } : c));
@@ -83,30 +91,30 @@ export const useCustomers = () => {
 
     const requiredFields = ["student_name", "student_id", "student_class", "password"];
     if (rows.some((row) => requiredFields.some((field) => !row[field]))) {
-      alert(t("fill_every_customer_field"));
+      showError(t("fill_every_customer_field"));
       return;
     }
 
     if (rows.some((row) => !MAJORS.includes(normalizeMajor(row.student_class)))) {
-      alert(t("select_major"));
+      showError(t("select_major"));
       return;
     }
 
     const invalidPin = rows.find((row) => row.pin && !/^\d{6}$/.test(row.pin));
     if (invalidPin) {
-      alert(t("err_pin_must_be_6"));
+      showError(t("err_pin_must_be_6"));
       return;
     }
 
     setIsSaving(true);
     try {
       await api.post("/api/customers/bulk", { customers: rows });
-      alert(`${rows.length} ${t("accounts_added_successfully")}`);
+      success(`${rows.length} ${t("accounts_added_successfully")}`);
       await fetchCustomers(); 
       closeModal(); 
     } catch (error) {
       console.error("Failed to add customer accounts", error);
-      alert(error.response?.data?.message || t("accounts_add_error"));
+      showError(getSafeApiMessage(error, t("accounts_add_error")));
     } finally {
       setIsSaving(false);
     }

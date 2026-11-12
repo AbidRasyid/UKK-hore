@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ArrowDown,
   ArrowLeft,
@@ -14,6 +14,8 @@ import CurrencyInput from "react-currency-input-field";
 import { useLanguage } from "../../hooks/useLanguage";
 import Pagination from "../../components/Pagination";
 import useClientPagination from "../../hooks/useClientPagination";
+import { useToast } from "../../hooks/useToast";
+import { getSafeApiMessage } from "../../utils/getSafeApiMessage";
 
 const normalizeStatus = (value) => String(value ?? "active").toLowerCase();
 
@@ -44,51 +46,54 @@ export default function CustomerTransactionPage() {
   const [transactionType, setTransactionType] = useState(null);
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { success, error: showError } = useToast();
   const outlet = useOutletContext() ?? {};
   const user = outlet?.user ?? outlet ?? {};
   const userId = user?.id;
+  const quickAmounts = [10000, 50000, 100000];
+
+  const loadPageData = useCallback(async ({ refreshCustomer = false, isCurrent = () => true } = {}) => {
+    try {
+      const requests = [
+        api.get(`/api/teller/customer/${customer_id}/transactions`),
+        api.get("/api/teller/shift"),
+      ];
+
+      if (!state?.customer || refreshCustomer) {
+        requests.push(api.get(`/api/customer/${customer_id}`));
+      }
+
+      const [transactionResponse, shiftResponse, customerResponse] = await Promise.all(requests);
+      const transactionData = transactionResponse.data?.data;
+
+      if (!Array.isArray(transactionData)) {
+        throw new Error("The transactions response has an invalid format.");
+      }
+
+      if (!isCurrent()) return;
+
+      setTransactions(sortTransactionsDesc(transactionData));
+      setHasOpenShift(Boolean(shiftResponse.data?.data));
+      if (customerResponse) {
+        setCustomer(customerResponse.data?.data ?? null);
+      }
+    } catch (error) {
+      console.error("Failed to load customer transaction page", error);
+      if (isCurrent()) setErrorMessage(t("transactions_load_error"));
+    } finally {
+      if (isCurrent()) setIsLoading(false);
+    }
+  }, [customer_id, state, t]);
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadPageData = async () => {
-      try {
-        const requests = [
-          api.get(`/api/teller/customer/${customer_id}/transactions`),
-          api.get("/api/teller/shift"),
-        ];
-
-        if (!state?.customer) {
-          requests.push(api.get(`/api/customer/${customer_id}`));
-        }
-
-        const [transactionResponse, shiftResponse, customerResponse] = await Promise.all(requests);
-        const transactionData = transactionResponse.data?.data;
-
-        if (!Array.isArray(transactionData)) {
-          throw new Error("The transactions response has an invalid format.");
-        }
-
-        if (isMounted) {
-          setTransactions(sortTransactionsDesc(transactionData));
-          setHasOpenShift(Boolean(shiftResponse.data?.data));
-          if (customerResponse) {
-            setCustomer(customerResponse.data?.data ?? null);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load customer transaction page", error);
-        if (isMounted) {
-          setErrorMessage(t("transactions_load_error"));
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+    const safeLoadPageData = async (options) => {
+      if (!isMounted) return;
+      await loadPageData({ ...options, isCurrent: () => isMounted });
     };
 
-    loadPageData();
+    safeLoadPageData();
 
     if (!userId || !window.Echo) {
       return () => {
@@ -99,9 +104,9 @@ export default function CustomerTransactionPage() {
     const channelName = `teller.${userId}`;
     const channel = window.Echo.private(channelName);
 
-    channel.listen("TransactionCompleted", (eventData) => {
+    channel.listen(".TransactionCompleted", (eventData) => {
       if (String(eventData.customer_id) === String(customer_id)) {
-        loadPageData();
+        safeLoadPageData({ refreshCustomer: true });
       }
     });
 
@@ -110,7 +115,7 @@ export default function CustomerTransactionPage() {
       channel.stopListening("TransactionCompleted");
       window.Echo.leave(channelName);
     };
-  }, [customer_id, state, t, userId]);
+  }, [customer_id, loadPageData, state, t, userId]);
 
   const balance = Number(customer?.balance) || 0;
   const activeStatus = normalizeStatus(customer?.status?.value ?? customer?.status);
@@ -118,10 +123,10 @@ export default function CustomerTransactionPage() {
 
   const handleTransaction = async (event) => {
     event.preventDefault();
-    const numericAmount = Number(amount);
+    const numericAmount = Number(String(amount).replace(/[^\d.]/g, ""));
 
     if (!numericAmount || numericAmount < 1) {
-      alert(t("err_invalid_amount"));
+      showError(t("err_invalid_amount"));
       return;
     }
 
@@ -131,12 +136,13 @@ export default function CustomerTransactionPage() {
         transaction_type: transactionType,
         amount: numericAmount,
       });
-      alert(t("transaction_request_sent"));
+      success(t("transaction_request_sent"));
+      await loadPageData({ refreshCustomer: true });
       setTransactionType(null);
       setAmount("");
     } catch (error) {
       console.error("Failed to initiate customer transaction", error);
-      alert(error.response?.data?.message || t("transaction_initiate_error"));
+      showError(getSafeApiMessage(error, t("transaction_initiate_error")));
     } finally {
       setIsSubmitting(false);
     }
@@ -301,14 +307,27 @@ export default function CustomerTransactionPage() {
                 name="amount"
                 placeholder="Rp 0"
                 prefix="Rp "
-                decimalsLimit={0}
+                decimalsLimit={2}
                 min={1}
+                step={1000}
                 value={amount}
-                onValueChange={(value) => setAmount(value)}
+                onValueChange={(value) => setAmount(value ?? "")}
                 className="mt-2 h-11 w-full border border-gray-300 px-3 outline-none focus:border-black"
                 required
               />
             </label>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {quickAmounts.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setAmount(String(preset))}
+                  className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:border-black hover:text-black"
+                >
+                  Rp {preset.toLocaleString("id-ID")}
+                </button>
+              ))}
+            </div>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={() => setTransactionType(null)} className="border border-gray-300 px-4 py-2 text-sm">
                 {t("cancel")}
@@ -320,6 +339,7 @@ export default function CustomerTransactionPage() {
           </form>
         </div>
       )}
+
     </div>
   );
 }

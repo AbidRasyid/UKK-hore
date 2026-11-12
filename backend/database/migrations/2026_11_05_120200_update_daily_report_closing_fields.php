@@ -10,9 +10,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('daily_reports', function (Blueprint $table): void {
-            $table->unsignedBigInteger('closing_balance')->nullable()->after('opening_balance');
-            $table->unsignedBigInteger('system_balance')->nullable()->default(null)->change();
-            $table->unsignedBigInteger('physical_balance')->nullable()->default(null)->change();
+            $table->decimal('closing_balance', 15, 2)->nullable()->after('opening_balance');
+            $table->decimal('system_balance', 15, 2)->nullable()->default(null)->change();
+            $table->decimal('physical_balance', 15, 2)->nullable()->default(null)->change();
         });
 
     }
@@ -27,8 +27,8 @@ return new class extends Migration
             ->update(['physical_balance' => 0]);
 
         Schema::table('daily_reports', function (Blueprint $table): void {
-            $table->unsignedBigInteger('system_balance')->default(0)->change();
-            $table->unsignedBigInteger('physical_balance')->default(0)->change();
+            $table->decimal('system_balance', 15, 2)->default(0)->change();
+            $table->decimal('physical_balance', 15, 2)->default(0)->change();
             $table->dropColumn('closing_balance');
         });
     }

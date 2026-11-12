@@ -5,12 +5,14 @@ import api from "../../api/axios";
 import UserRow from "../../components/users/userRow";
 import { handleBlock } from "../../utils/handlers";
 import { useLanguage } from "../../hooks/useLanguage";
+import { useToast } from "../../hooks/useToast";
 import Pagination from "../../components/Pagination";
 import useClientPagination from "../../hooks/useClientPagination";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const { t } = useLanguage();
+  const { success, error: showError } = useToast();
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -28,7 +30,7 @@ export default function UsersPage() {
     fetchData()
   }, [navigate]);
 
-  const block = async(user) => handleBlock(user, setUsers, '/api/user')
+  const block = async(user) => handleBlock(user, setUsers, '/api/user', success, showError)
 
   const { user } = useOutletContext();
 
