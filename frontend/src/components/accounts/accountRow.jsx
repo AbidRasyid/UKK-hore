@@ -1,7 +1,7 @@
 import { Trash2, Pen, Ban, LockOpen } from "lucide-react";
 import { useLanguage } from "../../hooks/useLanguage";
 
-export default function CustomerRow({ customer, index, onDelete, onEdit, onBlock }) {
+export default function CustomerRow({ customer, index, onEdit, onBlock }) {
   const { t } = useLanguage();
   const rawStatus = customer.status?.value ?? customer.status ?? "-";
   const isBlocked = rawStatus === 'blocked';

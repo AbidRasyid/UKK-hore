@@ -11,3 +11,7 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 Broadcast::channel('admin.activity-logs', function(User $user){
     return $user->role === UserRole::ADMINISTRATOR;
 });
+
+Broadcast::channel('teller.{tellerId}', function($user, $tellerId){
+    return (int) $user->id === (int) $tellerId;
+});

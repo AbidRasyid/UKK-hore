@@ -6,7 +6,7 @@ import {
   Filter,
   LockKeyhole,
 } from "lucide-react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useOutletContext, useParams } from "react-router-dom";
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import api from "../../api/axios";
 import { formatCurrency, formatDate } from "../../utils/format";
@@ -29,6 +29,7 @@ export default function CustomerTransactionPage() {
   const [transactionType, setTransactionType] = useState(null);
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const user = useOutletContext();
 
   useEffect(() => {
     let isMounted = true;
@@ -71,11 +72,21 @@ export default function CustomerTransactionPage() {
     };
 
     loadPageData();
-
+    
+    const channel = window.Echo.private(`teller.${user.id}`);
+    
+    channel.listen("TransactionCompleted", (eventData) => {
+      if (String(eventData.customer_id) === String(customer_id)) {
+        loadPageData();
+      }
+    });
+    
     return () => {
       isMounted = false;
+      channel.stopListening("TransactionCompleted");
+    window.Echo.leave(`teller${user.id}`);
     };
-  }, [customer_id, state, t]);
+  }, [customer_id, state, t, user.id]);
 
   const balance = Number(customer?.balance) || 0;
   const activeStatus = normalizeStatus(customer?.status?.value ?? customer?.status);

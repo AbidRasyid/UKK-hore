@@ -23,9 +23,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
+      const requestUrl = error.config?.url ?? "";
+      if (requestUrl.replace(/\/+$/, "").endsWith("/api/login")) {
+        return Promise.reject(error);
+      }
+
       purgeBrowserStorageCredentials();
       if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+        window.dispatchEvent(new Event("auth:unauthorized"));
       }
     }
     return Promise.reject(error);

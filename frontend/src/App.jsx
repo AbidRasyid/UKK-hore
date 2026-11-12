@@ -1,11 +1,11 @@
 import './App.css'
-import { BrowserRouter, Routes, Route} from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react';
 import Dashboard from './pages/dashboard';
 import LoginPage from './pages/loginPage';
 import UsersPage from './pages//users/usersPage';
 import Reports from './pages/reports';
 import JournalsPage from './pages/journalsPage';
-import SettingsPage from './pages/settingsPage';
 import PinRequestsPage from './pages/users/pinRequestsPage';
 
 import ProtectedRoute from './components/protectedRoute';
@@ -24,9 +24,22 @@ import CustomerPage from './pages/customers/customerPage';
 import TellerTransactionsPage from './pages/transactions/tellerTransactionsPage';
 import SupervisorTransactionsPage from './pages/transactions/supervisorTransactionsPage';
 
+function AuthRedirectHandler() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleUnauthorized = () => navigate('/login', { replace: true });
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
+  }, [navigate]);
+
+  return null;
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <AuthRedirectHandler />
       <Routes>
         <Route path='/404' element={<NotFound/>}/>
         <Route path="/login" element={<LoginPage />} />
@@ -44,10 +57,10 @@ function App() {
               <Route path="/users/bulk" element={<UserBulkCreatePage />} />
               <Route path='/user/add' element={ <UserFormPage/> }/>
               <Route path={"/user/:user_id/edit"} element={<UserFormPage/>}/>
-              <Route path="/settings" element={<SettingsPage />} />
               <Route path="/pin-requests" element={<PinRequestsPage />} />
               <Route path="/account/add" element={<CustomerFormPage />} />
               <Route path="/account/:customer_id/edit" element={<CustomerFormPage />} />
+
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['administrator', 'admin', 'supervisor']}/> }>

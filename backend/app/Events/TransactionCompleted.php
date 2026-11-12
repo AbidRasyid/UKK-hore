@@ -6,11 +6,11 @@ namespace App\Events;
 use Illuminate\Broadcasting\InteractsWithSockets;
 // use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class TransactionCompleted implements ShouldBroadcast
+class TransactionCompleted implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -41,6 +41,7 @@ class TransactionCompleted implements ShouldBroadcast
     {
         return 'Transaction completed';
     }
+
     public function broadcastWith(): array
     {
         return [

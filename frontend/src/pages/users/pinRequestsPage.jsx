@@ -19,6 +19,7 @@ const getStatus = (request) => String(request.status ?? "pending").toLowerCase()
 const getCustomerName = (request) =>
   request.customer?.fullname ||
   request.customer?.name ||
+  request.customer?.student_name ||
   request.customer_name ||
   request.customer?.username ||
   "-";
@@ -259,7 +260,7 @@ export default function PinRequestsPage() {
                             <p className="mt-1 text-xs text-gray-500">#{getCustomerIdentifier(request)}</p>
                           </td>
                           <td className="px-6 py-4 font-mono text-sm tracking-[0.2em] text-gray-900">
-                            {request.new_pin || "-"}
+                            ••••••
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600">{formatDate(request.created_at)}</td>
                           <td className="px-6 py-4">

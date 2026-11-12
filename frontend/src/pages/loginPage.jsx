@@ -27,9 +27,7 @@ const handleLogin = async (e) => {
     await api.get("/sanctum/csrf-cookie");
     
     // Asumsi endpoint login Laravel Anda mengembalikan data user yang login
-    const response = await api.post("/api/login", { username, password });
-    
-    localStorage.setItem("token", response.data.token);
+    await api.post("/api/login", { username, password });
 
     navigate("/");
   // eslint-disable-next-line no-unused-vars

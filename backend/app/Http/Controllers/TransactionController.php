@@ -183,7 +183,7 @@ class TransactionController extends Controller
             $data = Transaction::query()
                 ->with(['user:id,fullname', 'customer:id,student_name'])
                 ->where('customer_id', $customer_id)
-                ->orderBy('transaction_date', 'desc')
+                ->orderBy('id', 'desc')
                 ->get()
                 ->map(function (Transaction $transaction) {
                     $response = $transaction->toArray();
