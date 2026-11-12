@@ -17,6 +17,21 @@ import useClientPagination from "../../hooks/useClientPagination";
 
 const normalizeStatus = (value) => String(value ?? "active").toLowerCase();
 
+const getTransactionTimestamp = (transaction) => {
+  const rawValue = transaction?.transaction_date ?? transaction?.created_at;
+  const timestamp = new Date(rawValue).getTime();
+
+  return Number.isFinite(timestamp) ? timestamp : 0;
+};
+
+const sortTransactionsDesc = (transactions = []) =>
+  [...transactions].sort((left, right) => {
+    const leftTimestamp = getTransactionTimestamp(left);
+    const rightTimestamp = getTransactionTimestamp(right);
+
+    return rightTimestamp - leftTimestamp;
+  });
+
 export default function CustomerTransactionPage() {
   const { customer_id } = useParams();
   const { state } = useLocation();
@@ -53,7 +68,7 @@ export default function CustomerTransactionPage() {
         }
 
         if (isMounted) {
-          setTransactions(transactionData);
+          setTransactions(sortTransactionsDesc(transactionData));
           setHasOpenShift(Boolean(shiftResponse.data?.data));
           if (customerResponse) {
             setCustomer(customerResponse.data?.data ?? null);
