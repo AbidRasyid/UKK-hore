@@ -21,7 +21,7 @@ return [
 
     'allowed_origins' => ['http://localhost:5173', 'http://localhost:8080', 'https://bankmini.abidrasyid.my.id'],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => ['^https://([a-z0-9-]+\.)?abidrasyid\.my\.id$'],
 
     'allowed_headers' => ['*'],
 
