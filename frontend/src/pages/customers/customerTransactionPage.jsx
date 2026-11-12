@@ -44,7 +44,9 @@ export default function CustomerTransactionPage() {
   const [transactionType, setTransactionType] = useState(null);
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const user = useOutletContext();
+  const outlet = useOutletContext() ?? {};
+  const user = outlet?.user ?? outlet ?? {};
+  const userId = user?.id;
 
   useEffect(() => {
     let isMounted = true;
@@ -87,21 +89,28 @@ export default function CustomerTransactionPage() {
     };
 
     loadPageData();
-    
-    const channel = window.Echo.private(`teller.${user.id}`);
-    
+
+    if (!userId || !window.Echo) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const channelName = `teller.${userId}`;
+    const channel = window.Echo.private(channelName);
+
     channel.listen("TransactionCompleted", (eventData) => {
       if (String(eventData.customer_id) === String(customer_id)) {
         loadPageData();
       }
     });
-    
+
     return () => {
       isMounted = false;
       channel.stopListening("TransactionCompleted");
-    window.Echo.leave(`teller${user.id}`);
+      window.Echo.leave(channelName);
     };
-  }, [customer_id, state, t, user.id]);
+  }, [customer_id, state, t, userId]);
 
   const balance = Number(customer?.balance) || 0;
   const activeStatus = normalizeStatus(customer?.status?.value ?? customer?.status);
